@@ -1,16 +1,12 @@
-// ============================================================
-// FitTrack Pro — Supabase Client & Data Layer
-// ============================================================
-
 const SUPABASE_URL = 'https://rzivwbsqmsyhywfnmxbr.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_JG7SoGkEeLCvjU_ZbT89Uw_9gVjq856';
-
+ 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+ 
 // ============================================================
 // AUTH
 // ============================================================
-
+ 
 async function signUp(email, password, name, role) {
   const { data, error } = await supabaseClient.auth.signUp({
     email,
@@ -22,49 +18,49 @@ async function signUp(email, password, name, role) {
   if (error) throw error;
   return data;
 }
-
+ 
 async function signIn(email, password) {
   const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
   if (error) throw error;
   return data;
 }
-
+ 
 async function signOut() {
   await supabaseClient.auth.signOut();
 }
-
+ 
 async function getCurrentUser() {
   const { data } = await supabaseClient.auth.getUser();
   return data?.user ?? null;
 }
-
+ 
 async function getProfile(userId) {
   const { data, error } = await supabaseClient
     .from('profiles')
     .select('*')
     .eq('id', userId)
     .maybeSingle();
-
+ 
   if (error) throw error;
-
+ 
   if (!data) {
     const user = await getCurrentUser();
     const name = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Usuário';
     const role = user?.user_metadata?.role || 'aluno';
-
+ 
     const { data: created, error: insertErr } = await supabaseClient
       .from('profiles')
       .insert([{ id: userId, name, role }])
       .select()
       .maybeSingle();
-
+ 
     if (insertErr) throw insertErr;
     return created;
   }
-
+ 
   return data;
 }
-
+ 
 async function updateProfile(userId, updates) {
   const { data, error } = await supabaseClient
     .from('profiles')
@@ -75,11 +71,11 @@ async function updateProfile(userId, updates) {
   if (error) throw error;
   return data;
 }
-
+ 
 // ============================================================
 // STUDENTS
 // ============================================================
-
+ 
 async function dbGetStudents() {
   const user = await getCurrentUser();
   const { data, error } = await supabaseClient
@@ -90,7 +86,7 @@ async function dbGetStudents() {
   if (error) throw error;
   return data ?? [];
 }
-
+ 
 async function dbCreateStudent(payload) {
   const user = await getCurrentUser();
   const { data, error } = await supabaseClient
@@ -101,7 +97,7 @@ async function dbCreateStudent(payload) {
   if (error) throw error;
   return data;
 }
-
+ 
 async function dbUpdateStudent(id, updates) {
   const { data, error } = await supabaseClient
     .from('students')
@@ -112,7 +108,7 @@ async function dbUpdateStudent(id, updates) {
   if (error) throw error;
   return data;
 }
-
+ 
 // Versão para o aluno atualizar o próprio progresso (filtra por user_id)
 async function dbUpdateStudentProgress(studentId, progress) {
   const user = await getCurrentUser();
@@ -123,16 +119,16 @@ async function dbUpdateStudentProgress(studentId, progress) {
     .eq('user_id', user.id);
   if (error) throw error;
 }
-
+ 
 async function dbDeleteStudent(id) {
   const { error } = await supabaseClient.from('students').delete().eq('id', id);
   if (error) throw error;
 }
-
+ 
 // ============================================================
 // EXERCISES
 // ============================================================
-
+ 
 async function dbGetExercises() {
   const { data, error } = await supabaseClient
     .from('exercises')
@@ -141,7 +137,7 @@ async function dbGetExercises() {
   if (error) throw error;
   return data ?? [];
 }
-
+ 
 async function dbCreateExercise(payload) {
   const user = await getCurrentUser();
   const { data, error } = await supabaseClient
@@ -152,7 +148,7 @@ async function dbCreateExercise(payload) {
   if (error) throw error;
   return data;
 }
-
+ 
 async function dbUpdateExercise(id, updates) {
   const { data, error } = await supabaseClient
     .from('exercises')
@@ -163,16 +159,16 @@ async function dbUpdateExercise(id, updates) {
   if (error) throw error;
   return data;
 }
-
+ 
 async function dbDeleteExercise(id) {
   const { error } = await supabaseClient.from('exercises').delete().eq('id', id);
   if (error) throw error;
 }
-
+ 
 // ============================================================
 // PLANS
 // ============================================================
-
+ 
 async function dbGetPlansForStudent(studentId) {
   const { data, error } = await supabaseClient
     .from('plans')
@@ -188,7 +184,7 @@ async function dbGetPlansForStudent(studentId) {
   if (error) throw error;
   return data ?? [];
 }
-
+ 
 async function dbGetAllPlans() {
   const user = await getCurrentUser();
   const { data, error } = await supabaseClient
@@ -205,17 +201,17 @@ async function dbGetAllPlans() {
   if (error) throw error;
   return data ?? [];
 }
-
+ 
 async function dbCreatePlan(studentId, name, description, days) {
   const user = await getCurrentUser();
-
+ 
   const { data: plan, error: planErr } = await supabaseClient
     .from('plans')
     .insert([{ student_id: studentId, professor_id: user.id, name, description }])
     .select()
     .single();
   if (planErr) throw planErr;
-
+ 
   for (let i = 0; i < days.length; i++) {
     const day = days[i];
     const { data: planDay, error: dayErr } = await supabaseClient
@@ -224,7 +220,7 @@ async function dbCreatePlan(studentId, name, description, days) {
       .select()
       .single();
     if (dayErr) throw dayErr;
-
+ 
     for (let j = 0; j < day.exercises.length; j++) {
       const { error: exErr } = await supabaseClient
         .from('plan_exercises')
@@ -232,23 +228,31 @@ async function dbCreatePlan(studentId, name, description, days) {
       if (exErr) throw exErr;
     }
   }
-
+ 
   return plan;
 }
-
+ 
 async function dbDeletePlan(planId) {
   const { error } = await supabaseClient.from('plans').delete().eq('id', planId);
   if (error) throw error;
 }
-
+ 
 async function dbAssignPlan(studentId, planId) {
-  return dbUpdateStudent(studentId, { plan_id: planId });
+  // Atualiza plan_id no aluno
+  await dbUpdateStudent(studentId, { plan_id: planId });
+ 
+  // Atualiza também student_id no plano (garante que loadStudentData encontra)
+  const { error } = await supabaseClient
+    .from('plans')
+    .update({ student_id: studentId })
+    .eq('id', planId);
+  if (error) throw error;
 }
-
+ 
 // ============================================================
 // ASSESSMENTS
 // ============================================================
-
+ 
 async function dbGetAssessments(studentId) {
   const { data, error } = await supabaseClient
     .from('assessments')
@@ -258,7 +262,7 @@ async function dbGetAssessments(studentId) {
   if (error) throw error;
   return data ?? [];
 }
-
+ 
 async function dbCreateAssessment(payload) {
   const user = await getCurrentUser();
   const { data, error } = await supabaseClient
@@ -269,11 +273,11 @@ async function dbCreateAssessment(payload) {
   if (error) throw error;
   return data;
 }
-
+ 
 // ============================================================
 // TRAINING HISTORY
 // ============================================================
-
+ 
 async function dbGetHistory(studentId) {
   const { data, error } = await supabaseClient
     .from('training_history')
@@ -284,7 +288,7 @@ async function dbGetHistory(studentId) {
   if (error) throw error;
   return data ?? [];
 }
-
+ 
 async function dbAddHistory(studentId, entry) {
   const { data, error } = await supabaseClient
     .from('training_history')
@@ -294,20 +298,3 @@ async function dbAddHistory(studentId, entry) {
   if (error) throw error;
   return data;
 }
-
-// ============================================================
-// SQL — rode no SQL Editor do Supabase para corrigir policies
-// ============================================================
-/*
--- Permite aluno atualizar o próprio progresso
-drop policy if exists "students_self_update" on students;
-create policy "students_self_update" on students
-  for update using (user_id = auth.uid()) with check (user_id = auth.uid());
-
--- Permite aluno inserir no próprio histórico
-drop policy if exists "history_student_insert" on training_history;
-create policy "history_student_insert" on training_history
-  for insert with check (
-    student_id in (select id from students where user_id = auth.uid())
-  );
-*/
