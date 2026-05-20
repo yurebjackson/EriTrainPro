@@ -1581,7 +1581,7 @@ function rAvaliacoes() {
               ${[
                 ['Peso','weight','kg'],['Gordura','body_fat','%'],
                 ['Músculo','muscle_mass','kg'],['Cintura','waist','cm'],
-              ].map(([l,c,u]) => `<div style="background:white;border-radius:6px;padding:8px;text-align:center">
+              ].map(([l,c,u]) => `<div style="background:var(--color-background-primary);border-radius:6px;padding:8px;text-align:center">
                 <div style="font-size:10px;color:var(--color-text-secondary);margin-bottom:2px">${l}</div>
                 <div style="font-size:15px;font-weight:700;color:var(--color-text-primary)">${lastAv[c] ?? '–'}<span style="font-size:10px;font-weight:400"> ${lastAv[c] != null ? u : ''}</span></div>
                 ${delta(c, u)}
@@ -2531,12 +2531,15 @@ function renderWeightChart(avs) {
     ).join('');
   }
 
-  function valueLabels(coords, color, unit, anchor) {
-    // Só mostra valor no primeiro e último ponto
-    return [coords[0], coords[coords.length - 1]].map(c =>
-      `<text x="${c.x}" y="${(parseFloat(c.y) - 8).toFixed(1)}" text-anchor="${anchor}"
-        fill="${color}" font-size="9.5" font-weight="600" font-family="Inter,sans-serif">${c.v}${unit}</text>`
-    ).join('');
+  function valueLabels(coords, color, unit) {
+    // Com apenas 2 pontos os labels colidem no centro — ancora no extremo de cada ponto
+    return coords.map((c, i) => {
+      const anchor = i === 0 ? 'start' : i === coords.length - 1 ? 'end' : 'middle';
+      const dx = i === 0 ? 6 : i === coords.length - 1 ? -6 : 0;
+      return `<text x="${(parseFloat(c.x) + dx).toFixed(1)}" y="${(parseFloat(c.y) - 9).toFixed(1)}"
+        text-anchor="${anchor}" fill="${color}" font-size="10" font-weight="700"
+        font-family="Inter,sans-serif">${c.v}${unit}</text>`;
+    }).join('');
   }
 
   // Linhas de grade horizontais e labels do eixo Y
@@ -2588,14 +2591,14 @@ function renderWeightChart(avs) {
     ${wLine ? `
       ${polyline(wLine.coords, '#1D9E75')}
       ${dots(wLine.coords, '#1D9E75')}
-      ${valueLabels(wLine.coords, '#0F6E56', 'kg', 'middle')}
+      ${valueLabels(wLine.coords, '#1D9E75', 'kg')}
       ${yAxis(wLine, 'kg', '#1D9E75', 'left')}
     ` : ''}
 
     ${fLine ? `
       ${polyline(fLine.coords, '#D95F2B', '5,3')}
       ${dots(fLine.coords, '#D95F2B')}
-      ${valueLabels(fLine.coords, '#A33A10', '%', 'middle')}
+      ${valueLabels(fLine.coords, '#D95F2B', '%')}
       ${hasFat && hasWeight ? yAxis(fLine, '%', '#D95F2B', 'right') : yAxis(fLine, '%', '#D95F2B', 'left')}
     ` : ''}
 
