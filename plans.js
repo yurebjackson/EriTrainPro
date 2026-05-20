@@ -81,6 +81,9 @@ async function savePlan() {
     const newPlan = fresh.find(p => p.id === plan.id);
     if (newPlan) PLANS.push(normalizePlan(newPlan));
 
+    // Reseta progresso do aluno ao criar plano novo
+    await resetStudentProgress(studentId);
+
     closeM('moNewPlan');
     showToast('Plano criado!');
     nav('planos');
