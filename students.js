@@ -105,7 +105,11 @@ async function confirmAssign() {
     await dbAssignPlan(assignTarget, selPlan);
 
     const s = STUDENTS.find(st => st.id === assignTarget);
-    if (s) s.plan = selPlan;
+    if (s) {
+      s.plan = selPlan;
+      // Reseta progresso ao trocar de plano
+      await resetStudentProgress(assignTarget);
+    }
 
     closeM('moAssign');
     showToast('Treino atribuído!');
