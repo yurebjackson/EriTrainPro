@@ -1474,7 +1474,8 @@ function addPlanDay() {
       <div class="muscle-group-list" style="display:none;padding:4px 8px 0">
         ${exs.map(e => `
           <label style="display:flex;align-items:center;gap:8px;font-size:13px;padding:5px 4px;
-                        border-bottom:0.5px solid var(--color-border-tertiary);cursor:pointer">
+                        border-bottom:0.5px solid var(--color-border-tertiary);cursor:pointer;
+                        color:var(--color-text-primary)">
             <input type="checkbox" class="plDayEx" value="${e.id}" style="accent-color:var(--brand);width:14px;height:14px;flex-shrink:0">
             <span>${e.name}</span>
           </label>`).join('')}
@@ -2349,7 +2350,8 @@ function addEditPlanDay(existingDay = null) {
       <div class="muscle-group-list" style="display:none;padding:4px 8px 0">
         ${exs.map(e => `
           <label style="display:flex;align-items:center;gap:8px;font-size:13px;padding:5px 4px;
-                        border-bottom:0.5px solid var(--color-border-tertiary);cursor:pointer">
+                        border-bottom:0.5px solid var(--color-border-tertiary);cursor:pointer;
+                        color:var(--color-text-primary)">
             <input type="checkbox" class="epDayEx" value="${e.id}"
                    ${existingDay?.exercises?.includes(e.id) ? 'checked' : ''}
                    style="accent-color:var(--brand);width:14px;height:14px;flex-shrink:0">
