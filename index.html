@@ -1606,6 +1606,7 @@ function rAvaliacoes() {
                   </div>
                   <div style="display:flex;align-items:center;gap:8px">
                     ${calcIMC(av)}
+                    <button class="bas" style="font-size:10px;padding:2px 8px" onclick="event.stopPropagation();exportAvaliacaoPDF('${s.id}','${av.id}')"><i class="ti ti-file-type-pdf"></i> PDF</button>
                     <button class="bda" style="font-size:10px;padding:2px 8px" onclick="event.stopPropagation();deleteAvaliacao('${s.id}','${av.id}')"><i class="ti ti-trash"></i></button>
                   </div>
                 </div>
@@ -2081,7 +2082,15 @@ function rMinhaAvaliacao() {
           ${renderWeightChart(avs)}
         </div>` : ''}
         ${avs.map(av => `<div class="cd">
-          <div class="ch"><span class="ct">Avaliação – ${fmtDate(av.date)}</span>${calcIMC(av)}</div>
+          <div class="ch">
+            <span class="ct">Avaliação – ${fmtDate(av.date)}</span>
+            <div style="display:flex;align-items:center;gap:8px">
+              ${calcIMC(av)}
+              <button class="bas" style="font-size:11px;padding:3px 10px" onclick="exportAvaliacaoPDF('${curUser.sid}','${av.id}')">
+                <i class="ti ti-file-type-pdf"></i> Exportar PDF
+              </button>
+            </div>
+          </div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px">
             ${[
               ['Peso', av.weight ?? av.peso, 'kg'],
@@ -2616,53 +2625,97 @@ function renderWeightChart(avs) {
 // EXPORTAR AVALIAÇÃO EM PDF (via impressão do browser)
 // ============================================================
 function exportAvaliacaoPDF(studentId, avId) {
-  const s = STUDENTS.find(st => st.id === studentId);
-  const av = s?.avaliacoes?.find(a => a.id === avId);
-  if (!av || !s) return;
+  // Busca o aluno — para o aluno logado, curUser.sid é o ID dele
+  const sid = studentId || curUser?.sid;
+  const s   = STUDENTS.find(st => st.id === sid);
 
-  const imc = calcIMC(av);
+  // Busca a avaliação — por id ou pela posição (string vs number)
+  const av  = s?.avaliacoes?.find(a => String(a.id) === String(avId));
+  if (!av || !s) { showToast('Avaliação não encontrada', 'erro'); return; }
+
   const fields = [
-    ['Peso', av.weight ?? av.peso, 'kg'],
-    ['Altura', av.height ?? av.altura, (av.height ?? av.altura) > 3 ? 'cm' : 'm'],
-    ['% Gordura', av.body_fat ?? av.gordura, '%'],
-    ['Massa muscular', av.muscle_mass ?? av.musculo, 'kg'],
-    ['Peitoral', av.chest ?? av.peito, 'cm'],
-    ['Cintura', av.waist ?? av.cintura, 'cm'],
-    ['Quadril', av.hips ?? av.quadril, 'cm'],
-    ['Braço', av.arm ?? av.braco, 'cm'],
-  ].filter(([, v]) => v != null);
+    ['Peso',          av.weight      ?? av.peso,    'kg'],
+    ['Altura',        av.height      ?? av.altura,   (av.height ?? av.altura) > 3 ? 'cm' : 'm'],
+    ['% Gordura',     av.body_fat    ?? av.gordura,  '%'],
+    ['Massa muscular',av.muscle_mass ?? av.musculo,  'kg'],
+    ['Peitoral',      av.chest       ?? av.peito,    'cm'],
+    ['Cintura',       av.waist       ?? av.cintura,  'cm'],
+    ['Quadril',       av.hips        ?? av.quadril,  'cm'],
+    ['Braço',         av.arm         ?? av.braco,    'cm'],
+  ].filter(([, v]) => v != null && v !== '' && !isNaN(parseFloat(v)));
+
+  // Calcula IMC para o PDF (texto puro)
+  let imcText = '';
+  const peso = parseFloat(av.weight ?? av.peso);
+  const altRaw = parseFloat(av.height ?? av.altura);
+  if (peso > 0 && altRaw > 0) {
+    const alt = altRaw > 3 ? altRaw / 100 : altRaw;
+    const imc = peso / (alt * alt);
+    const cat = imc < 18.5 ? 'Abaixo do peso' : imc < 25 ? 'Normal' : imc < 30 ? 'Sobrepeso' : 'Obesidade';
+    imcText = `IMC ${imc.toFixed(1)} · ${cat}`;
+  }
+
+  const profName = CURRENT_PROFILE?.name ?? '';
+  const profCref = CURRENT_PROFILE?.cref  ? `· CREF ${CURRENT_PROFILE.cref}` : '';
 
   const win = window.open('', '_blank');
-  win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
-    <meta charset="UTF-8"><title>Avaliação – ${s.name}</title>
-    <style>
-      *{box-sizing:border-box;margin:0;padding:0}
-      body{font-family:'Segoe UI',Arial,sans-serif;padding:2.5rem;color:#1C1C1A;max-width:680px;margin:auto}
-      h1{font-size:22px;font-weight:700;margin-bottom:4px}
-      .sub{font-size:13px;color:#6B6B69;margin-bottom:2rem}
-      .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:1.5rem}
-      .cell{border:1px solid #E3E3E1;border-radius:8px;padding:12px 16px}
-      .label{font-size:11px;color:#6B6B69;margin-bottom:4px}
-      .value{font-size:18px;font-weight:700}
-      .imc{display:inline-block;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:1rem;background:#EAF3DE;color:#27500A}
-      .notes{background:#F5F5F3;border-radius:8px;padding:12px;font-size:13px;color:#6B6B69;font-style:italic;margin-top:1rem}
-      .footer{margin-top:2rem;font-size:11px;color:#A8A8A6;border-top:1px solid #E3E3E1;padding-top:1rem}
-      @media print{body{padding:1.5rem}}
-    </style>
-  </head><body>
-    <h1>Avaliação Física — ${s.name}</h1>
-    <p class="sub">Data: ${fmtDate(av.date)} · Professor: ${CURRENT_PROFILE?.name ?? ''} ${CURRENT_PROFILE?.cref ? '· CREF ' + CURRENT_PROFILE.cref : ''}</p>
-    ${imc ? `<div class="imc">${imc.replace(/<[^>]+>/g,'')}</div>` : ''}
-    <div class="grid">
-      ${fields.map(([l,v,u]) => `<div class="cell">
-        <div class="label">${l}</div>
-        <div class="value">${v}<span style="font-size:12px;font-weight:400"> ${u}</span></div>
-      </div>`).join('')}
+  if (!win) { showToast('Permita pop-ups para exportar o PDF', 'aviso'); return; }
+
+  win.document.write(`<!DOCTYPE html>
+<html lang="pt-BR"><head>
+  <meta charset="UTF-8">
+  <title>Avaliação – ${s.name}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#1C1C1A;padding:2.5rem;max-width:720px;margin:auto}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem;padding-bottom:1rem;border-bottom:2px solid #1D9E75}
+    .header-left h1{font-size:20px;font-weight:700;margin-bottom:4px}
+    .header-left p{font-size:12px;color:#6B6B69}
+    .header-right{text-align:right;font-size:12px;color:#6B6B69}
+    .badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;background:#E1F5EE;color:#0F6E56;margin-bottom:1.5rem}
+    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.5rem}
+    .cell{border:1px solid #E3E3E1;border-radius:8px;padding:10px 12px}
+    .cell-label{font-size:10px;color:#6B6B69;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
+    .cell-value{font-size:17px;font-weight:700;color:#1C1C1A}
+    .cell-unit{font-size:11px;font-weight:400}
+    .notes{background:#F5F5F3;border-radius:8px;padding:12px 16px;font-size:13px;color:#6B6B69;font-style:italic;margin-bottom:1.5rem}
+    .footer{font-size:10px;color:#A8A8A6;border-top:1px solid #E3E3E1;padding-top:1rem;display:flex;justify-content:space-between}
+    @media print{
+      body{padding:1.5rem}
+      @page{margin:1.5cm}
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <h1>Avaliação Física</h1>
+      <p>${s.name}</p>
     </div>
-    ${av.notes || av.obs ? `<div class="notes">📝 "${av.notes || av.obs}"</div>` : ''}
-    <div class="footer">Gerado pelo FitTrack Pro em ${new Date().toLocaleDateString('pt-BR')}</div>
-    <script>window.onload=()=>{window.print();}<\/script>
-  </body></html>`);
+    <div class="header-right">
+      <div>${fmtDate(av.date)}</div>
+      <div>${profName} ${profCref}</div>
+    </div>
+  </div>
+
+  ${imcText ? `<div class="badge">${imcText}</div>` : ''}
+
+  <div class="grid">
+    ${fields.map(([l, v, u]) => `<div class="cell">
+      <div class="cell-label">${l}</div>
+      <div class="cell-value">${parseFloat(v).toLocaleString('pt-BR')}<span class="cell-unit"> ${u}</span></div>
+    </div>`).join('')}
+  </div>
+
+  ${av.notes || av.obs ? `<div class="notes">📝 ${av.notes || av.obs}</div>` : ''}
+
+  <div class="footer">
+    <span>FitTrack Pro</span>
+    <span>Gerado em ${new Date().toLocaleDateString('pt-BR')}</span>
+  </div>
+
+  <script>window.onload = () => { window.print(); }<\/script>
+</body></html>`);
   win.document.close();
 }
 
