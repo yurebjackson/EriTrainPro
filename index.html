@@ -25,6 +25,20 @@ body{font-family:'Inter','Segoe UI',sans-serif;background:#F5F5F3;min-height:100
   --border-radius-sm:6px;--border-radius-md:8px;--border-radius-lg:12px;
   --font-sans:'Inter','Segoe UI',sans-serif;
 }
+[data-theme="dark"]{
+  --brand:#22C58B;--brand-d:#1aA070;--brand-l:#0D2E22;
+  --acc:#5BA3E8;--acc-l:#0E2035;
+  --color-background-primary:#1A1A18;
+  --color-background-secondary:#242422;
+  --color-background-tertiary:#2E2E2C;
+  --color-text-primary:#E8E8E6;
+  --color-text-secondary:#9A9A98;
+  --color-text-tertiary:#6A6A68;
+  --color-border-primary:#3A3A38;
+  --color-border-secondary:#323230;
+  --color-border-tertiary:#2A2A28;
+}
+body{transition:background .2s,color .2s}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
 
 /* ===== LOGIN ===== */
@@ -186,6 +200,18 @@ body{font-family:'Inter','Segoe UI',sans-serif;background:#F5F5F3;min-height:100
 .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .6s linear infinite;margin-right:6px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;z-index:300;font-size:14px;color:var(--color-text-secondary);gap:10px}
+[data-theme="dark"] .loading-overlay{background:rgba(0,0,0,.6)}
+.btn-theme{background:none;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:5px 8px;cursor:pointer;color:var(--color-text-secondary);font-size:16px;display:flex;align-items:center;transition:all .15s}
+.btn-theme:hover{background:var(--color-background-secondary);color:var(--color-text-primary)}
+[data-theme="dark"] .lc{background:var(--color-background-primary);border-color:var(--color-border-tertiary)}
+[data-theme="dark"] .fi,[data-theme="dark"] .fsel,[data-theme="dark"] .fta{background:var(--color-background-secondary);color:var(--color-text-primary);border-color:var(--color-border-secondary)}
+[data-theme="dark"] .mb{background:var(--color-background-primary)}
+[data-theme="dark"] .mh{background:var(--color-background-primary);border-color:var(--color-border-tertiary)}
+[data-theme="dark"] .sc{background:var(--color-background-tertiary)}
+[data-theme="dark"] .ec{background:var(--color-background-primary);border-color:var(--color-border-secondary)}
+[data-theme="dark"] .cd{background:var(--color-background-primary);border-color:var(--color-border-tertiary)}
+[data-theme="dark"] .toast{background:#2A2A28}
+[data-theme="dark"] body{background:var(--color-background-secondary)}
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0.3; }
@@ -323,6 +349,7 @@ body{font-family:'Inter','Segoe UI',sans-serif;background:#F5F5F3;min-height:100
     </div>
     <div class="tr">
       <span class="nu" id="NU"></span>
+      <button class="btn-theme" id="btnTheme" onclick="toggleTheme()" title="Modo escuro" aria-label="Alternar modo escuro"><i class="ti ti-moon" id="themeIcon"></i></button>
       <button class="blo" onclick="doLogout()">Sair</button>
     </div>
   </nav>
@@ -570,6 +597,32 @@ body{font-family:'Inter','Segoe UI',sans-serif;background:#F5F5F3;min-height:100
       <div style="display:flex;gap:8px;justify-content:flex-end">
         <button class="bcn" onclick="closeM('moNewPlan')">Cancelar</button>
         <button class="bco" id="btnSavePlan" data-label="Criar plano" onclick="savePlan()">Criar plano</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: EDITAR PLANO ===== -->
+<div class="mo" id="moEditPlan">
+  <div class="mb" style="max-width:560px">
+    <div class="mh">
+      <span class="mt">Editar plano de treino</span>
+      <button class="bcl" onclick="closeM('moEditPlan')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="mbd">
+      <input type="hidden" id="editPlanId"/>
+      <div class="fg2">
+        <div class="fg"><label class="fl">Aluno</label>
+          <select class="fsel" id="epStudentSel"></select>
+        </div>
+        <div class="fg"><label class="fl">Nome do plano</label><input class="fi" id="epName" placeholder="Ex: Hipertrofia A/B"/></div>
+      </div>
+      <div class="fg"><label class="fl">Descrição</label><input class="fi" id="epDesc" placeholder="Ex: 4 dias/sem · Ganho de massa"/></div>
+      <div id="editPlanDaysContainer"></div>
+      <button class="bas" style="margin-bottom:1rem" onclick="addEditPlanDay()"><i class="ti ti-plus"></i> Adicionar dia</button>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="bcn" onclick="closeM('moEditPlan')">Cancelar</button>
+        <button class="bco" id="btnUpdatePlan" data-label="Salvar alterações" onclick="updatePlan()"><i class="ti ti-check"></i> Salvar alterações</button>
       </div>
     </div>
   </div>
@@ -1368,6 +1421,7 @@ function rPlanos() {
           <span class="ct">${p.name}</span>
           <div style="display:flex;gap:6px;align-items:center">
             ${student ? `<span style="font-size:12px;color:var(--color-text-secondary)">${student.name}</span>` : ''}
+            <button class="bas" style="font-size:11px;padding:3px 8px" onclick="openEditPlan('${p.id}')"><i class="ti ti-edit"></i> Editar</button>
             <button class="bda" onclick="deletePlan('${p.id}')"><i class="ti ti-trash"></i></button>
           </div>
         </div>
@@ -1533,6 +1587,10 @@ function rAvaliacoes() {
                 ${delta(c, u)}
               </div>`).join('')}
             </div>
+          </div>` : ''}
+          ${avs.length >= 2 ? `<div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px;margin-bottom:12px">
+            <div style="font-size:11px;font-weight:600;color:var(--color-text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Evolução peso & gordura</div>
+            ${renderWeightChart(avs)}
           </div>` : ''}
           <!-- Histórico completo expansível -->
           <div id="avhist-${s.id}">
@@ -2017,7 +2075,11 @@ function rMinhaAvaliacao() {
           <div style="font-size:15px;font-weight:600;margin-bottom:6px">Nenhuma avaliação ainda</div>
           <p style="font-size:13px">Solicite uma avaliação ao seu professor.</p>
         </div>`
-      : avs.map(av => `<div class="cd">
+      : `${avs.length >= 2 ? `<div class="cd" style="margin-bottom:1rem">
+          <div class="ct" style="margin-bottom:12px">Evolução de peso e gordura</div>
+          ${renderWeightChart(avs)}
+        </div>` : ''}
+        ${avs.map(av => `<div class="cd">
           <div class="ch"><span class="ct">Avaliação – ${fmtDate(av.date)}</span>${calcIMC(av)}</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px">
             ${[
@@ -2035,7 +2097,7 @@ function rMinhaAvaliacao() {
           </div>
           ${av.notes || av.obs ? `<div style="border-top:0.5px solid var(--color-border-tertiary);padding-top:1rem;margin-top:1rem">
             <p style="font-size:13px;color:var(--color-text-secondary);font-style:italic">"${av.notes || av.obs}"</p></div>` : ''}
-        </div>`).join('')}`;
+        </div>`).join('')}`}`;
 }
 
 function rMeuHistorico() {
@@ -2214,9 +2276,405 @@ function rProgresso() {
 }
 
 // ============================================================
+// MODO ESCURO
+// ============================================================
+function toggleTheme() {
+  const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const next = dark ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  document.getElementById('themeIcon').className = next === 'dark' ? 'ti ti-sun' : 'ti ti-moon';
+  try { localStorage.setItem('fittrack_theme', next); } catch(_) {}
+}
+
+function initTheme() {
+  try {
+    const saved = localStorage.getItem('fittrack_theme') ?? 'light';
+    if (saved === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      const icon = document.getElementById('themeIcon');
+      if (icon) icon.className = 'ti ti-sun';
+    }
+  } catch(_) {}
+}
+
+// ============================================================
+// EDITAR PLANO
+// ============================================================
+let editPlanDayCount = 0;
+
+function openEditPlan(planId) {
+  const plan = getPlanById(planId);
+  if (!plan) return;
+
+  editPlanDayCount = 0;
+  document.getElementById('editPlanId').value = planId;
+
+  document.getElementById('epStudentSel').innerHTML =
+    STUDENTS.map(s => `<option value="${s.id}" ${s.id === plan.studentId ? 'selected' : ''}>${s.name}</option>`).join('');
+
+  document.getElementById('epName').value = plan.name;
+  document.getElementById('epDesc').value = plan.desc || '';
+
+  const container = document.getElementById('editPlanDaysContainer');
+  container.innerHTML = '';
+
+  plan.days.forEach(day => {
+    addEditPlanDay(day);
+  });
+
+  openM('moEditPlan');
+}
+
+function addEditPlanDay(existingDay = null) {
+  const i = editPlanDayCount++;
+
+  const byMuscle = {};
+  EXERCISES.forEach(e => {
+    (byMuscle[e.muscle] = byMuscle[e.muscle] ?? []).push(e);
+  });
+
+  const exOptions = Object.entries(byMuscle).map(([muscle, exs]) => `
+    <div style="margin-bottom:8px">
+      <div style="display:flex;align-items:center;justify-content:space-between;
+                  padding:5px 8px;background:var(--color-background-secondary);
+                  border-radius:6px;cursor:pointer;user-select:none"
+           onclick="toggleMuscleGroup(this)">
+        <div style="display:flex;align-items:center;gap:7px">
+          <div style="width:8px;height:8px;border-radius:50%;background:${muscleColorDark(muscle)};flex-shrink:0"></div>
+          <span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">${muscle}</span>
+          <span style="font-size:11px;color:var(--color-text-tertiary)">(${exs.length})</span>
+        </div>
+        <i class="ti ti-chevron-right" style="font-size:12px;color:var(--color-text-tertiary);transition:transform .2s"></i>
+      </div>
+      <div class="muscle-group-list" style="display:none;padding:4px 8px 0">
+        ${exs.map(e => `
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;padding:5px 4px;
+                        border-bottom:0.5px solid var(--color-border-tertiary);cursor:pointer">
+            <input type="checkbox" class="epDayEx" value="${e.id}"
+                   ${existingDay?.exercises?.includes(e.id) ? 'checked' : ''}
+                   style="accent-color:var(--brand);width:14px;height:14px;flex-shrink:0">
+            <span>${e.name}</span>
+          </label>`).join('')}
+      </div>
+    </div>`).join('');
+
+  const div = document.createElement('div');
+  div.className = 'plan-day-row ep-day-row';
+  div.style.cssText = 'border:0.5px solid var(--color-border-secondary);border-radius:8px;padding:12px;margin-bottom:10px';
+  div.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <input class="fi epDayLabel" placeholder="Nome do dia (ex: Dia A – Peito)"
+             value="${existingDay?.label ?? ''}" style="flex:1"/>
+      <button class="bda" onclick="this.closest('.ep-day-row').remove()"><i class="ti ti-trash"></i></button>
+    </div>
+    <div style="margin-bottom:8px">
+      <input class="fi" placeholder="Buscar exercício..." style="font-size:12px;padding:6px 10px"
+             oninput="filterEditPlanExercises(this)"/>
+    </div>
+    <div class="ex-group-container" style="max-height:240px;overflow-y:auto">${exOptions}</div>`;
+
+  document.getElementById('editPlanDaysContainer').appendChild(div);
+}
+
+function filterEditPlanExercises(input) {
+  const term = input.value.toLowerCase().trim();
+  const container = input.closest('.ep-day-row').querySelector('.ex-group-container');
+  container.querySelectorAll('.muscle-group-list').forEach(list => {
+    let visibleInGroup = 0;
+    list.querySelectorAll('label').forEach(label => {
+      const name = label.querySelector('span')?.textContent.toLowerCase() ?? '';
+      const match = !term || name.includes(term);
+      label.style.display = match ? '' : 'none';
+      if (match) visibleInGroup++;
+    });
+    const groupDiv = list.closest('div');
+    groupDiv.style.display = visibleInGroup === 0 && term ? 'none' : '';
+    if (term && visibleInGroup > 0) list.style.display = 'block';
+    else if (!term) list.style.display = 'none';
+  });
+}
+
+async function updatePlan() {
+  const planId    = document.getElementById('editPlanId').value;
+  const studentId = document.getElementById('epStudentSel').value;
+  const name      = document.getElementById('epName').value.trim();
+  const description = document.getElementById('epDesc').value.trim();
+
+  if (!studentId || !name) {
+    showToast('Selecione o aluno e informe o nome do plano', 'aviso');
+    return;
+  }
+
+  const dayRows = document.querySelectorAll('.ep-day-row');
+  const days = [];
+  dayRows.forEach(row => {
+    const label = row.querySelector('.epDayLabel')?.value.trim();
+    const exIds = Array.from(row.querySelectorAll('.epDayEx:checked')).map(cb => cb.value);
+    if (label && exIds.length) days.push({ label, exercises: exIds });
+  });
+
+  if (!days.length) {
+    showToast('Adicione ao menos um dia com exercícios', 'aviso');
+    return;
+  }
+
+  setBtnLoading('btnUpdatePlan', true);
+
+  try {
+    // Deleta plan_days existentes (cascade deleta plan_exercises)
+    const { error: delErr } = await supabaseClient
+      .from('plan_days')
+      .delete()
+      .eq('plan_id', planId);
+    if (delErr) throw delErr;
+
+    // Atualiza dados do plano
+    const { error: planErr } = await supabaseClient
+      .from('plans')
+      .update({ name, description, student_id: studentId })
+      .eq('id', planId);
+    if (planErr) throw planErr;
+
+    // Recria os dias e exercícios
+    for (let i = 0; i < days.length; i++) {
+      const day = days[i];
+      const { data: planDay, error: dayErr } = await supabaseClient
+        .from('plan_days')
+        .insert([{ plan_id: planId, label: day.label, sort_order: i }])
+        .select()
+        .single();
+      if (dayErr) throw dayErr;
+
+      for (let j = 0; j < day.exercises.length; j++) {
+        const { error: exErr } = await supabaseClient
+          .from('plan_exercises')
+          .insert([{ plan_day_id: planDay.id, exercise_id: day.exercises[j], sort_order: j }]);
+        if (exErr) throw exErr;
+      }
+    }
+
+    // Recarrega os planos
+    const fresh = await dbGetPlansForStudent(studentId);
+    const updated = fresh.find(p => p.id === planId);
+    if (updated) {
+      const idx = PLANS.findIndex(p => p.id === planId);
+      if (idx !== -1) PLANS[idx] = normalizePlan(updated);
+    }
+
+    closeM('moEditPlan');
+    showToast('Plano atualizado com sucesso!', 'sucesso');
+    rPlanos();
+  } catch (err) {
+    showToast('Erro: ' + err.message, 'erro');
+  } finally {
+    setBtnLoading('btnUpdatePlan', false);
+  }
+}
+
+// ============================================================
+// GRÁFICO DE EVOLUÇÃO DE PESO/GORDURA (Canvas SVG puro)
+// ============================================================
+function renderWeightChart(avs) {
+  // avs chegam do mais recente → inverte para cronológico
+  const sorted = [...avs].reverse();
+  const hasWeight = sorted.some(a => parseFloat(a.weight) > 0);
+  const hasFat    = sorted.some(a => parseFloat(a.body_fat) > 0);
+
+  if (!hasWeight && !hasFat)
+    return `<p style="font-size:13px;color:var(--color-text-secondary)">Dados insuficientes para gráfico.</p>`;
+  if (sorted.length < 2)
+    return `<p style="font-size:13px;color:var(--color-text-secondary)">Registre ao menos 2 avaliações para ver a evolução.</p>`;
+
+  // Dimensões
+  const W = 540, H = 200, PL = 46, PR = hasFat ? 44 : 12, PT = 24, PB = 32;
+  const iW = W - PL - PR, iH = H - PT - PB;
+
+  // Helpers de escala
+  function scaleY(val, minV, maxV) {
+    const range = maxV - minV || 1;
+    return PT + iH - ((val - minV) / range) * iH;
+  }
+
+  function niceRange(vals) {
+    const min = Math.min(...vals), max = Math.max(...vals);
+    const pad = (max - min) * 0.15 || max * 0.05 || 1;
+    return [min - pad, max + pad];
+  }
+
+  function buildLine(key) {
+    const pts = sorted.map((a, i) => ({ v: parseFloat(a[key]), i })).filter(p => !isNaN(p.v));
+    if (pts.length < 2) return null;
+    const [minV, maxV] = niceRange(pts.map(p => p.v));
+    const coords = pts.map(p => {
+      const x = PL + (p.i / (sorted.length - 1)) * iW;
+      const y = scaleY(p.v, minV, maxV);
+      return { x: x.toFixed(1), y: y.toFixed(1), v: p.v, i: p.i };
+    });
+    return { coords, minV, maxV };
+  }
+
+  const wLine = hasWeight ? buildLine('weight') : null;
+  const fLine = hasFat    ? buildLine('body_fat') : null;
+
+  // Polyline + pontos
+  function polyline(coords, color, dash = '') {
+    const pts = coords.map(c => `${c.x},${c.y}`).join(' ');
+    return `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2"
+      stroke-linejoin="round" stroke-linecap="round" ${dash ? `stroke-dasharray="${dash}"` : ''}/>`;
+  }
+
+  function dots(coords, color) {
+    return coords.map(c =>
+      `<circle cx="${c.x}" cy="${c.y}" r="4" fill="${color}" stroke="var(--color-background-primary)" stroke-width="2">
+        <title>${c.v}</title>
+      </circle>`
+    ).join('');
+  }
+
+  function valueLabels(coords, color, unit, anchor) {
+    // Só mostra valor no primeiro e último ponto
+    return [coords[0], coords[coords.length - 1]].map(c =>
+      `<text x="${c.x}" y="${(parseFloat(c.y) - 8).toFixed(1)}" text-anchor="${anchor}"
+        fill="${color}" font-size="9.5" font-weight="600" font-family="Inter,sans-serif">${c.v}${unit}</text>`
+    ).join('');
+  }
+
+  // Linhas de grade horizontais e labels do eixo Y
+  function yAxis(line, unit, color, side) {
+    const { minV, maxV } = line;
+    const step = (maxV - minV) / 4;
+    return [0, 1, 2, 3, 4].map(i => {
+      const val = minV + step * i;
+      const y = scaleY(val, minV, maxV).toFixed(1);
+      const x = side === 'left' ? PL - 5 : W - PR + 5;
+      const anchor = side === 'left' ? 'end' : 'start';
+      return `<text x="${x}" y="${y}" dominant-baseline="middle" text-anchor="${anchor}"
+        fill="${color}" font-size="9" font-family="Inter,sans-serif" opacity="0.75">${val.toFixed(1)}${unit}</text>`;
+    }).join('');
+  }
+
+  // Grid (baseado no peso se disponível, senão gordura)
+  const refLine = wLine ?? fLine;
+  const gridLines = [0.25, 0.5, 0.75].map(p => {
+    const y = (PT + iH * (1 - p)).toFixed(1);
+    return `<line x1="${PL}" y1="${y}" x2="${W - PR}" y2="${y}"
+      stroke="var(--color-border-tertiary)" stroke-width="0.5" stroke-dasharray="3,3"/>`;
+  }).join('');
+
+  // Labels eixo X (datas)
+  const xLabels = sorted.map((a, i) => {
+    const x = (PL + (i / (sorted.length - 1)) * iW).toFixed(1);
+    const d = a.date ? a.date.slice(5).replace('-', '/') : '';
+    return `<text x="${x}" y="${H - 6}" text-anchor="middle"
+      fill="var(--color-text-tertiary)" font-size="9" font-family="Inter,sans-serif">${d}</text>`;
+  }).join('');
+
+  // Legenda
+  const legend = [
+    wLine ? `<circle cx="${PL}" cy="${PT - 10}" r="4" fill="#1D9E75"/>
+      <text x="${PL + 8}" y="${PT - 7}" font-size="10" fill="var(--color-text-secondary)" font-family="Inter,sans-serif">Peso (kg)</text>` : '',
+    fLine ? `<line x1="${PL + 76}" y1="${PT - 10}" x2="${PL + 92}" y2="${PT - 10}" stroke="#D95F2B" stroke-width="2" stroke-dasharray="4,2"/>
+      <circle cx="${PL + 84}" cy="${PT - 10}" r="3.5" fill="#D95F2B" stroke="var(--color-background-primary)" stroke-width="1.5"/>
+      <text x="${PL + 100}" y="${PT - 7}" font-size="10" fill="var(--color-text-secondary)" font-family="Inter,sans-serif">Gordura (%)</text>` : '',
+  ].join('');
+
+  return `
+  <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"
+       style="width:100%;height:auto;overflow:visible;display:block">
+    ${gridLines}
+    <line x1="${PL}" y1="${PT + iH}" x2="${W - PR}" y2="${PT + iH}"
+      stroke="var(--color-border-secondary)" stroke-width="0.8"/>
+
+    ${wLine ? `
+      ${polyline(wLine.coords, '#1D9E75')}
+      ${dots(wLine.coords, '#1D9E75')}
+      ${valueLabels(wLine.coords, '#0F6E56', 'kg', 'middle')}
+      ${yAxis(wLine, 'kg', '#1D9E75', 'left')}
+    ` : ''}
+
+    ${fLine ? `
+      ${polyline(fLine.coords, '#D95F2B', '5,3')}
+      ${dots(fLine.coords, '#D95F2B')}
+      ${valueLabels(fLine.coords, '#A33A10', '%', 'middle')}
+      ${hasFat && hasWeight ? yAxis(fLine, '%', '#D95F2B', 'right') : yAxis(fLine, '%', '#D95F2B', 'left')}
+    ` : ''}
+
+    ${xLabels}
+    ${legend}
+  </svg>`;
+}
+
+// ============================================================
+// EXPORTAR AVALIAÇÃO EM PDF (via impressão do browser)
+// ============================================================
+function exportAvaliacaoPDF(studentId, avId) {
+  const s = STUDENTS.find(st => st.id === studentId);
+  const av = s?.avaliacoes?.find(a => a.id === avId);
+  if (!av || !s) return;
+
+  const imc = calcIMC(av);
+  const fields = [
+    ['Peso', av.weight ?? av.peso, 'kg'],
+    ['Altura', av.height ?? av.altura, (av.height ?? av.altura) > 3 ? 'cm' : 'm'],
+    ['% Gordura', av.body_fat ?? av.gordura, '%'],
+    ['Massa muscular', av.muscle_mass ?? av.musculo, 'kg'],
+    ['Peitoral', av.chest ?? av.peito, 'cm'],
+    ['Cintura', av.waist ?? av.cintura, 'cm'],
+    ['Quadril', av.hips ?? av.quadril, 'cm'],
+    ['Braço', av.arm ?? av.braco, 'cm'],
+  ].filter(([, v]) => v != null);
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
+    <meta charset="UTF-8"><title>Avaliação – ${s.name}</title>
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:'Segoe UI',Arial,sans-serif;padding:2.5rem;color:#1C1C1A;max-width:680px;margin:auto}
+      h1{font-size:22px;font-weight:700;margin-bottom:4px}
+      .sub{font-size:13px;color:#6B6B69;margin-bottom:2rem}
+      .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:1.5rem}
+      .cell{border:1px solid #E3E3E1;border-radius:8px;padding:12px 16px}
+      .label{font-size:11px;color:#6B6B69;margin-bottom:4px}
+      .value{font-size:18px;font-weight:700}
+      .imc{display:inline-block;padding:4px 12px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:1rem;background:#EAF3DE;color:#27500A}
+      .notes{background:#F5F5F3;border-radius:8px;padding:12px;font-size:13px;color:#6B6B69;font-style:italic;margin-top:1rem}
+      .footer{margin-top:2rem;font-size:11px;color:#A8A8A6;border-top:1px solid #E3E3E1;padding-top:1rem}
+      @media print{body{padding:1.5rem}}
+    </style>
+  </head><body>
+    <h1>Avaliação Física — ${s.name}</h1>
+    <p class="sub">Data: ${fmtDate(av.date)} · Professor: ${CURRENT_PROFILE?.name ?? ''} ${CURRENT_PROFILE?.cref ? '· CREF ' + CURRENT_PROFILE.cref : ''}</p>
+    ${imc ? `<div class="imc">${imc.replace(/<[^>]+>/g,'')}</div>` : ''}
+    <div class="grid">
+      ${fields.map(([l,v,u]) => `<div class="cell">
+        <div class="label">${l}</div>
+        <div class="value">${v}<span style="font-size:12px;font-weight:400"> ${u}</span></div>
+      </div>`).join('')}
+    </div>
+    ${av.notes || av.obs ? `<div class="notes">📝 "${av.notes || av.obs}"</div>` : ''}
+    <div class="footer">Gerado pelo FitTrack Pro em ${new Date().toLocaleDateString('pt-BR')}</div>
+    <script>window.onload=()=>{window.print();}<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+// ============================================================
+// PROGRESSO RESETA AO CRIAR PLANO NOVO
+// ============================================================
+async function resetStudentProgress(studentId) {
+  try {
+    await dbUpdateStudent(studentId, { progress: 0 });
+    const s = STUDENTS.find(st => st.id === studentId);
+    if (s) s.progress = 0;
+  } catch(e) {
+    console.warn('resetStudentProgress:', e.message);
+  }
+}
+
+// ============================================================
 // Init
 // ============================================================
-document.addEventListener('DOMContentLoaded', initAuth);
+document.addEventListener('DOMContentLoaded', () => { initTheme(); initAuth(); });
 </script>
 </body>
 </html>
