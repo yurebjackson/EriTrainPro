@@ -872,10 +872,10 @@ function rMeuPerfil() {
         <button class="bas" style="margin-left:auto" onclick="openProfPerfil()"><i class="ti ti-edit"></i> Editar</button>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem">
-        <div class="sc"><div class="sl">CREF</div><div style="font-size:14px;font-weight:600">${p.cref || '—'}</div></div>
-        <div class="sc"><div class="sl">Especialidade</div><div style="font-size:14px;font-weight:600">${p.specialty || '—'}</div></div>
-        <div class="sc"><div class="sl">Telefone</div><div style="font-size:14px;font-weight:600">${p.phone || '—'}</div></div>
-        <div class="sc"><div class="sl">Alunos ativos</div><div style="font-size:14px;font-weight:600">${STUDENTS.length}</div></div>
+        <div class="sc"><div class="sl">CREF</div><div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">${p.cref || '—'}</div></div>
+        <div class="sc"><div class="sl">Especialidade</div><div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">${p.specialty || '—'}</div></div>
+        <div class="sc"><div class="sl">Telefone</div><div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">${p.phone || '—'}</div></div>
+        <div class="sc"><div class="sl">Alunos ativos</div><div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">${STUDENTS.length}</div></div>
       </div>
       ${p.bio ? `<div style="border-top:0.5px solid var(--color-border-tertiary);padding-top:1rem">
         <div style="font-size:12px;color:var(--color-text-secondary);margin-bottom:4px">Bio</div>
@@ -1620,7 +1620,7 @@ function rAvaliacoes() {
                       ['Quadril', av.hips ?? av.quadril, 'cm'],
                       ['Braço', av.arm ?? av.braco, 'cm'],
                     ].map(([l,v,u]) => `<div class="sc"><div class="sl">${l}</div>
-                      <div style="font-size:14px;font-weight:600">${v ?? '–'}${v != null ? `<span style="font-size:10px;font-weight:400"> ${u}</span>` : ''}</div>
+                      <div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">${v ?? '–'}${v != null ? `<span style="font-size:10px;font-weight:400"> ${u}</span>` : ''}</div>
                     </div>`).join('')}
                   </div>
                   ${av.notes || av.obs ? `<div style="background:var(--color-background-secondary);border-radius:6px;padding:8px">
@@ -2092,7 +2092,7 @@ function rMinhaAvaliacao() {
               ['Quadril', av.hips ?? av.quadril, 'cm'],
               ['Braço', av.arm ?? av.braco, 'cm'],
             ].map(([l, v, u]) => `<div class="sc"><div class="sl">${l}</div>
-              <div style="font-size:18px;font-weight:600">${v || '–'}<span style="font-size:12px;font-weight:400"> ${u}</span></div>
+              <div style="font-size:18px;font-weight:600;color:var(--color-text-primary)">${v || '–'}<span style="font-size:12px;font-weight:400"> ${u}</span></div>
             </div>`).join('')}
           </div>
           ${av.notes || av.obs ? `<div style="border-top:0.5px solid var(--color-border-tertiary);padding-top:1rem;margin-top:1rem">
@@ -2250,7 +2250,7 @@ function rProgresso() {
           ['Músculo', lastAv.muscle_mass ?? lastAv.musculo, 'kg'],
           ['Cintura', lastAv.waist ?? lastAv.cintura, 'cm'],
         ].map(([l,v,u]) => `<div class="sc"><div class="sl">${l}</div>
-          <div style="font-size:18px;font-weight:600">${v??'–'}${v!=null?`<span style="font-size:11px;font-weight:400"> ${u}</span>`:''}</div>
+          <div style="font-size:18px;font-weight:600;color:var(--color-text-primary)">${v??'–'}${v!=null?`<span style="font-size:11px;font-weight:400"> ${u}</span>`:''}</div>
         </div>`).join('')}
       </div>
       ${prevAv ? `<div style="border-top:0.5px solid var(--color-border-tertiary);padding-top:10px">${weightDelta()}</div>` : ''}
