@@ -104,11 +104,22 @@ async function confirmAssign() {
   try {
     await dbAssignPlan(assignTarget, selPlan);
 
-    const s = STUDENTS.find(st => st.id === assignTarget);
+    const s    = STUDENTS.find(st => st.id === assignTarget);
+    const plan = PLANS.find(p => p.id === selPlan);
+
     if (s) {
       s.plan = selPlan;
-      // Reseta progresso ao trocar de plano
       await resetStudentProgress(assignTarget);
+
+      // Notifica o aluno se ele tiver user_id vinculado
+      if (s.user_id) {
+        const planName = plan?.name ?? 'Novo treino';
+        await dbCreateNotification(
+          s.user_id,
+          '🏋️ Novo treino atribuído!',
+          `Seu professor atribuiu o plano "${planName}". Acesse "Meu Treino" para começar.`
+        ).catch(e => console.warn('notif:', e.message));
+      }
     }
 
     closeM('moAssign');
