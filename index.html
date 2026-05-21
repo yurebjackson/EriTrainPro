@@ -209,7 +209,9 @@ body{transition:background .2s,color .2s}
 .btn-notif:hover{background:var(--color-background-secondary);color:var(--color-text-primary)}
 .notif-badge{position:absolute;top:-5px;right:-5px;background:#E03030;color:white;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px;pointer-events:none}
 .notif-dropdown{position:absolute;top:calc(100% + 8px);right:0;width:320px;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:500;overflow:hidden;display:none}
-@media(max-width:480px){.notif-dropdown{width:calc(100vw - 24px);right:-8px}}
+@media(max-width:600px){
+  .notif-dropdown{position:fixed;top:56px;left:8px;right:8px;width:auto}
+}
 .notif-dropdown.open{display:block}
 .notif-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:0.5px solid var(--color-border-tertiary)}
 .notif-header span{font-size:13px;font-weight:600;color:var(--color-text-primary)}
