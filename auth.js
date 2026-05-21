@@ -375,7 +375,13 @@ async function bootApp() {
     await loadAllData();
     nav('dashboard');
   } else {
+    // Mostra sininho só para alunos
+    const notifWrap = document.getElementById('notifWrap');
+    if (notifWrap) notifWrap.style.display = 'flex';
+
     await loadStudentData();
+    await loadNotifications();
+    showNotifBanner();
     nav('meu-treino');
   }
 }
