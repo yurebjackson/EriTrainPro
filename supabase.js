@@ -360,3 +360,77 @@ async function uploadAvatar(userId, file) {
   await updateProfile(userId, { avatar_url: url });
   return url;
 }
+
+// ============================================================
+// SCHEDULED ASSESSMENTS
+// ============================================================
+
+async function dbCreateScheduledAssessment(payload) {
+  const user = await getCurrentUser();
+  const { data, error } = await supabaseClient
+    .from('scheduled_assessments')
+    .insert([{ ...payload, professor_id: user.id }])
+    .select().single();
+  if (error) throw error;
+  return data;
+}
+
+async function dbGetScheduledAssessments() {
+  const user = await getCurrentUser();
+  const { data, error } = await supabaseClient
+    .from('scheduled_assessments')
+    .select('*, students(name, user_id)')
+    .eq('professor_id', user.id)
+    .order('scheduled_date', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+async function dbGetStudentSchedules(studentId) {
+  const { data, error } = await supabaseClient
+    .from('scheduled_assessments')
+    .select('*')
+    .eq('student_id', studentId)
+    .order('scheduled_date', { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+async function dbUpdateScheduledAssessment(id, updates) {
+  const { error } = await supabaseClient
+    .from('scheduled_assessments')
+    .update(updates)
+    .eq('id', id);
+  if (error) throw error;
+}
+
+async function dbDeleteScheduledAssessment(id) {
+  const { error } = await supabaseClient
+    .from('scheduled_assessments')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+}
+
+// ============================================================
+// WORKOUT FEEDBACK
+// ============================================================
+
+async function dbSaveFeedback(payload) {
+  const { data, error } = await supabaseClient
+    .from('workout_feedback')
+    .insert([payload])
+    .select().single();
+  if (error) throw error;
+  return data;
+}
+
+async function dbGetFeedbacks(studentId) {
+  const { data, error } = await supabaseClient
+    .from('workout_feedback')
+    .select('*')
+    .eq('student_id', studentId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
