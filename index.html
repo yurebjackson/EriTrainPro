@@ -201,6 +201,12 @@ body{transition:background .2s,color .2s}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;z-index:300;font-size:14px;color:var(--color-text-secondary);gap:10px}
 [data-theme="dark"] .loading-overlay{background:rgba(0,0,0,.6)}
+/* Avatar com upload */
+.av-upload{position:relative;cursor:pointer;display:inline-flex;flex-shrink:0}
+.av-upload img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.av-upload-overlay{position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;color:white;font-size:18px}
+.av-upload:hover .av-upload-overlay{opacity:1}
+.av-upload input[type=file]{display:none}
 .btn-theme{background:none;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:5px 8px;cursor:pointer;color:var(--color-text-secondary);font-size:16px;display:flex;align-items:center;transition:all .15s}
 .btn-theme:hover{background:var(--color-background-secondary);color:var(--color-text-primary)}
 /* Sininho */
@@ -813,15 +819,16 @@ function buildSidebar() {
       <div class="ss">Evolução</div>
       <div class="si" data-p="minha-avaliacao"   onclick="nav('minha-avaliacao')"><i class="ti ti-heart-rate-monitor"></i>Minhas avaliações</div>
       <div class="si" data-p="meu-historico"     onclick="nav('meu-historico')"><i class="ti ti-history"></i>Meu histórico</div>
-      <div class="si" data-p="progresso"         onclick="nav('progresso')"><i class="ti ti-chart-line"></i>Progresso</div>`;
+      <div class="si" data-p="progresso"         onclick="nav('progresso')"><i class="ti ti-chart-line"></i>Progresso</div>
+      <div class="si" data-p="perfil-aluno"      onclick="nav('perfil-aluno')"><i class="ti ti-user-circle"></i>Meu Perfil</div>`;
 
     // Bottom nav mobile — aluno
     _buildBottomNav([
       { p:'meu-treino',      icon:'ti-clipboard-check',   label:'Treino' },
-      { p:'exercicios',      icon:'ti-barbell',           label:'Exercícios' },
       { p:'minha-avaliacao', icon:'ti-heart-rate-monitor',label:'Avaliação' },
-      { p:'meu-historico',   icon:'ti-history',           label:'Histórico' },
       { p:'progresso',       icon:'ti-chart-line',        label:'Progresso' },
+      { p:'meu-historico',   icon:'ti-history',           label:'Histórico' },
+      { p:'perfil-aluno',    icon:'ti-user-circle',       label:'Perfil' },
     ]);
   }
 }
@@ -857,6 +864,7 @@ function nav(page) {
     planos: rPlanos, avaliacoes: rAvaliacoes, 'historico-prof': rHistoricoProf,
     'meu-perfil': rMeuPerfil, 'meu-treino': rMeuTreino,
     'minha-avaliacao': rMinhaAvaliacao, 'meu-historico': rMeuHistorico, progresso: rProgresso,
+    'perfil-aluno': rPerfilAluno,
   };
   pages[page]?.();
   window.scrollTo(0, 0);
@@ -902,13 +910,16 @@ function rMeuPerfil() {
     <p class="pt">Meu Perfil</p><p class="ps">Suas informações como professor.</p>
     <div class="cd">
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:1.5rem">
-        <div class="av t2" style="width:56px;height:56px;font-size:18px">${initials(p.name ?? '?')}</div>
+        ${avatarHTML(p.name ?? '?', p.avatar_url, 64, 't2', true)}
         <div>
           <div style="font-size:17px;font-weight:600;color:var(--color-text-primary)">${p.name ?? ''}</div>
           <div style="font-size:13px;color:var(--color-text-secondary)">${p.specialty ?? 'Professor'}</div>
           <span class="rb rp" style="margin-top:4px;display:inline-block">Professor</span>
         </div>
         <button class="bas" style="margin-left:auto" onclick="openProfPerfil()"><i class="ti ti-edit"></i> Editar</button>
+      </div>
+      <div style="font-size:11px;color:var(--color-text-tertiary);margin:-12px 0 14px;padding-left:2px">
+        <i class="ti ti-camera" style="font-size:10px"></i> Clique na foto para trocar
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem">
         <div class="sc"><div class="sl">CREF</div><div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">${p.cref || '—'}</div></div>
@@ -2325,6 +2336,39 @@ function rProgresso() {
 }
 
 // ============================================================
+// PERFIL DO ALUNO
+// ============================================================
+function rPerfilAluno() {
+  const p = CURRENT_PROFILE ?? {};
+  const student = STUDENTS.find(s => s.id === curUser.sid) ?? {};
+  const plan = getPlanById(student.plan_id || student.plan);
+
+  document.getElementById('MC').innerHTML = `
+    <p class="pt">Meu Perfil</p><p class="ps">Suas informações pessoais.</p>
+    <div class="cd">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:1.5rem">
+        ${avatarHTML(p.name ?? curUser.name ?? '?', p.avatar_url, 64, 't3', true)}
+        <div>
+          <div style="font-size:17px;font-weight:600;color:var(--color-text-primary)">${p.name ?? curUser.name ?? ''}</div>
+          <div style="font-size:13px;color:var(--color-text-secondary)">${student.goal ?? 'Aluno'}</div>
+          <span class="rb ral" style="margin-top:4px;display:inline-block">Aluno</span>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--color-text-tertiary);margin:-12px 0 14px;padding-left:2px">
+        <i class="ti ti-camera" style="font-size:10px"></i> Clique na foto para trocar
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="sc"><div class="sl">E-mail</div><div style="font-size:13px;font-weight:600;color:var(--color-text-primary);word-break:break-all">${CURRENT_USER?.email ?? '—'}</div></div>
+        <div class="sc"><div class="sl">Telefone</div><div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">${student.phone || '—'}</div></div>
+        <div class="sc"><div class="sl">Idade</div><div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">${student.age ? student.age + ' anos' : '—'}</div></div>
+        <div class="sc"><div class="sl">Plano ativo</div><div style="font-size:13px;font-weight:600;color:var(--color-text-primary)">${plan?.name ?? 'Sem plano'}</div></div>
+        <div class="sc"><div class="sl">Progresso</div><div style="font-size:14px;font-weight:600;color:var(--brand)">${student.progress ?? 0}%</div></div>
+        <div class="sc"><div class="sl">Objetivo</div><div style="font-size:13px;font-weight:600;color:var(--color-text-primary)">${student.goal || '—'}</div></div>
+      </div>
+    </div>`;
+}
+
+// ============================================================
 // NOTIFICAÇÕES
 // ============================================================
 let NOTIFICATIONS = [];
@@ -2434,6 +2478,73 @@ function showNotifBanner() {
   // Mostra a mais recente como toast
   const last = unread[0];
   showToast(`🔔 ${last.title}: ${last.message}`, 'sucesso', 5000);
+}
+
+// ============================================================
+// AVATAR
+// ============================================================
+
+// Retorna o HTML do avatar — foto se tiver, iniciais se não
+function avatarHTML(name, avatarUrl, size = 40, extraClass = '', uploadable = false) {
+  const style = `width:${size}px;height:${size}px;font-size:${Math.round(size * 0.36)}px`;
+
+  if (avatarUrl) {
+    const inner = `<img src="${avatarUrl}" alt="${name}" style="width:${size}px;height:${size}px;object-fit:cover;border-radius:50%;display:block">`;
+    if (uploadable) {
+      return `<div class="av-upload ${extraClass}" style="${style};border-radius:50%" onclick="triggerAvatarUpload()" title="Trocar foto">
+        ${inner}
+        <div class="av-upload-overlay"><i class="ti ti-camera"></i></div>
+        <input type="file" id="avatarInput" accept="image/jpeg,image/png,image/webp" onchange="handleAvatarUpload(this)">
+      </div>`;
+    }
+    return `<img src="${avatarUrl}" alt="${name}" style="width:${size}px;height:${size}px;object-fit:cover;border-radius:50%;display:block;flex-shrink:0">`;
+  }
+
+  const cls = `av ${extraClass}`;
+  if (uploadable) {
+    return `<div class="av-upload" style="${style};border-radius:50%" onclick="triggerAvatarUpload()" title="Adicionar foto">
+      <div class="${cls}" style="${style}">${initials(name)}</div>
+      <div class="av-upload-overlay"><i class="ti ti-camera"></i></div>
+      <input type="file" id="avatarInput" accept="image/jpeg,image/png,image/webp" onchange="handleAvatarUpload(this)">
+    </div>`;
+  }
+  return `<div class="${cls}" style="${style}">${initials(name)}</div>`;
+}
+
+function triggerAvatarUpload() {
+  document.getElementById('avatarInput')?.click();
+}
+
+async function handleAvatarUpload(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+
+  // Valida tamanho (máx 2MB)
+  if (file.size > 2 * 1024 * 1024) {
+    showToast('Imagem muito grande. Máximo 2MB.', 'aviso');
+    return;
+  }
+
+  showToast('Enviando foto...', 'sucesso', 10000);
+
+  try {
+    const url = await uploadAvatar(CURRENT_USER.id, file);
+    CURRENT_PROFILE.avatar_url = url;
+
+    // Atualiza todos os avatares visíveis na página
+    document.querySelectorAll('.av-upload img').forEach(img => img.src = url);
+    document.querySelectorAll('.av-upload').forEach(wrap => {
+      if (!wrap.querySelector('img')) {
+        // Era iniciais — recria com foto
+        const div = wrap.querySelector('.av');
+        if (div) div.outerHTML = `<img src="${url}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block">`;
+      }
+    });
+
+    showToast('Foto atualizada!', 'sucesso');
+  } catch(e) {
+    showToast('Erro ao enviar: ' + e.message, 'erro');
+  }
 }
 
 // ============================================================
