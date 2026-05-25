@@ -673,6 +673,79 @@ body{transition:background .2s,color .2s}
   </div>
 </div>
 
+<!-- ===== MODAL: AGENDAR AVALIAÇÃO ===== -->
+<div class="mo" id="moAgendarAv">
+  <div class="mb" style="max-width:460px">
+    <div class="mh">
+      <span class="mt">Agendar avaliação</span>
+      <button class="bcl" onclick="closeM('moAgendarAv')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="mbd">
+      <div class="fg">
+        <label class="fl">Aluno</label>
+        <select class="fsel" id="agStudentSel"></select>
+      </div>
+      <div class="fg2">
+        <div class="fg">
+          <label class="fl">Data</label>
+          <input class="fi" type="date" id="agDate"/>
+        </div>
+        <div class="fg">
+          <label class="fl">Horário</label>
+          <input class="fi" type="time" id="agTime"/>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="fl">Observações (opcional)</label>
+        <textarea class="fta" id="agNotes" rows="2" placeholder="Ex: Trazer roupa confortável..."></textarea>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="bcn" onclick="closeM('moAgendarAv')">Cancelar</button>
+        <button class="bco" id="btnSaveAgend" data-label="Agendar" onclick="saveAgendamento()"><i class="ti ti-calendar-plus"></i> Agendar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: FEEDBACK DO TREINO ===== -->
+<div class="mo" id="moFeedback">
+  <div class="mb" style="max-width:420px">
+    <div class="mh">
+      <span class="mt">Como foi o treino?</span>
+      <button class="bcl" onclick="closeM('moFeedback')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="mbd">
+      <input type="hidden" id="fbHistoryId"/>
+      <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:1rem">Selecione o nível de esforço percebido:</p>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:1.5rem" id="effortGrid">
+        ${[
+          { val:'leve',        emoji:'😌', label:'Leve' },
+          { val:'moderado',    emoji:'🙂', label:'Moderado' },
+          { val:'intenso',     emoji:'😤', label:'Intenso' },
+          { val:'muito_intenso',emoji:'🥵',label:'Muito intenso' },
+          { val:'maximo',      emoji:'💀', label:'Máximo' },
+        ].map(e => `
+          <label style="display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;
+                        padding:10px 4px;border-radius:var(--border-radius-md);border:1.5px solid var(--color-border-secondary);
+                        transition:all .15s;font-size:11px;color:var(--color-text-secondary);text-align:center"
+                 id="effort-${e.val}" onclick="selectEffort('${e.val}')">
+            <input type="radio" name="effort" value="${e.val}" style="display:none">
+            <span style="font-size:26px">${e.emoji}</span>
+            <span>${e.label}</span>
+          </label>`).join('')}
+      </div>
+      <div class="fg">
+        <label class="fl">Comentário (opcional)</label>
+        <textarea class="fta" id="fbNotes" rows="2" placeholder="Como você se sentiu? Algo que deu certo ou difícil..."></textarea>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="bcn" onclick="closeM('moFeedback')">Pular</button>
+        <button class="bco" id="btnSaveFeedback" data-label="Enviar" onclick="saveFeedback()"><i class="ti ti-send"></i> Enviar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"><i id="toastIcon" class="ti ti-check" aria-hidden="true"></i><span id="toastMsg">Ok!</span></div>
 
 <!-- ===== SCRIPTS ===== -->
@@ -781,7 +854,7 @@ function selRole(r) {
 // Carregamento de dados
 // ============================================================
 async function loadAllData() {
-  await Promise.all([loadStudents(), loadExercises(), loadPlans()]);
+  await Promise.all([loadStudents(), loadExercises(), loadPlans(), loadSchedules()]);
 }
 
 // ============================================================
@@ -798,6 +871,7 @@ function buildSidebar() {
       <div class="ss">Meus alunos</div>
       <div class="si" data-p="alunos"          onclick="nav('alunos')"><i class="ti ti-users"></i>Gerenciar alunos</div>
       <div class="si" data-p="avaliacoes"      onclick="nav('avaliacoes')"><i class="ti ti-heart-rate-monitor"></i>Avaliações físicas</div>
+      <div class="si" data-p="agendamentos"    onclick="nav('agendamentos')"><i class="ti ti-calendar-event"></i>Agendamentos</div>
       <div class="si" data-p="historico-prof"  onclick="nav('historico-prof')"><i class="ti ti-history"></i>Histórico geral</div>
       <div class="ss">Conteúdo</div>
       <div class="si" data-p="exercicios"      onclick="nav('exercicios')"><i class="ti ti-barbell"></i>Exercícios</div>
@@ -818,6 +892,7 @@ function buildSidebar() {
       <div class="si" data-p="exercicios"        onclick="nav('exercicios')"><i class="ti ti-barbell"></i>Exercícios</div>
       <div class="ss">Evolução</div>
       <div class="si" data-p="minha-avaliacao"   onclick="nav('minha-avaliacao')"><i class="ti ti-heart-rate-monitor"></i>Minhas avaliações</div>
+      <div class="si" data-p="meus-agendamentos" onclick="nav('meus-agendamentos')"><i class="ti ti-calendar-event"></i>Agendamentos</div>
       <div class="si" data-p="meu-historico"     onclick="nav('meu-historico')"><i class="ti ti-history"></i>Meu histórico</div>
       <div class="si" data-p="progresso"         onclick="nav('progresso')"><i class="ti ti-chart-line"></i>Progresso</div>
       <div class="si" data-p="perfil-aluno"      onclick="nav('perfil-aluno')"><i class="ti ti-user-circle"></i>Meu Perfil</div>`;
@@ -862,9 +937,10 @@ function nav(page) {
   const pages = {
     dashboard: rDashboard, alunos: rAlunos, exercicios: rExercicios,
     planos: rPlanos, avaliacoes: rAvaliacoes, 'historico-prof': rHistoricoProf,
-    'meu-perfil': rMeuPerfil, 'meu-treino': rMeuTreino,
+    'meu-perfil': rMeuPerfil, agendamentos: rAgendamentos,
+    'meu-treino': rMeuTreino,
     'minha-avaliacao': rMinhaAvaliacao, 'meu-historico': rMeuHistorico, progresso: rProgresso,
-    'perfil-aluno': rPerfilAluno,
+    'perfil-aluno': rPerfilAluno, 'meus-agendamentos': rMeusAgendamentos,
   };
   pages[page]?.();
   window.scrollTo(0, 0);
@@ -2047,8 +2123,8 @@ async function finishWorkout(di, dayLabel, exIds) {
 
   const sid = curUser.sid;
 
-  // Salva no histórico
-  await registerHistory(sid, {
+  // Salva no histórico e captura o objeto retornado (para o feedback)
+  const histEntry = await registerHistory(sid, {
     date:    new Date().toISOString().slice(0, 10),
     type:    'treino',
     label:   dayLabel,
@@ -2075,12 +2151,13 @@ async function finishWorkout(di, dayLabel, exIds) {
   finishingWorkout = false;
   saveWorkoutState();
 
-  // Mostra modal de resumo
-  showFinishModal(dayLabel, timeStr, done, total, pct, motivacional);
+  // Mostra modal de resumo e abre feedback em seguida
+  showFinishModal(dayLabel, timeStr, done, total, pct, motivacional, histEntry => {
+    openFeedbackModal(histEntry?.id ?? null);
+  });
 }
 
-function showFinishModal(dayLabel, timeStr, done, total, pct, msg) {
-  // Remove modal anterior se existir
+function showFinishModal(dayLabel, timeStr, done, total, pct, msg, onFeedback) {
   document.getElementById('moFinish')?.remove();
 
   const mo = document.createElement('div');
@@ -2094,9 +2171,9 @@ function showFinishModal(dayLabel, timeStr, done, total, pct, msg) {
         <div style="font-size:14px;color:var(--color-text-secondary);margin-bottom:1.5rem">${dayLabel}</div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:1.5rem">
-          <div class="sc"><div class="sl">Tempo</div><div style="font-size:22px;font-weight:700">${timeStr}</div></div>
-          <div class="sc"><div class="sl">Exercícios</div><div style="font-size:22px;font-weight:700">${done}/${total}</div></div>
-          <div class="sc"><div class="sl">Aproveitamento</div><div style="font-size:22px;font-weight:700">${pct}%</div></div>
+          <div class="sc"><div class="sl">Tempo</div><div style="font-size:22px;font-weight:700;color:var(--color-text-primary)">${timeStr}</div></div>
+          <div class="sc"><div class="sl">Exercícios</div><div style="font-size:22px;font-weight:700;color:var(--color-text-primary)">${done}/${total}</div></div>
+          <div class="sc"><div class="sl">Aproveitamento</div><div style="font-size:22px;font-weight:700;color:var(--color-text-primary)">${pct}%</div></div>
         </div>
 
         <div style="background:var(--brand-l);border-radius:var(--border-radius-md);padding:14px;margin-bottom:1.5rem">
@@ -2107,13 +2184,21 @@ function showFinishModal(dayLabel, timeStr, done, total, pct, msg) {
           <div style="width:${pct}%;background:var(--brand);height:8px;border-radius:99px;transition:width .6s"></div>
         </div>
 
-        <button class="bco" style="width:100%" onclick="document.getElementById('moFinish').remove();nav('meu-treino')">
-          <i class="ti ti-check"></i> Fechar
-        </button>
+        <div style="display:flex;gap:8px">
+          <button class="bcn" style="flex:1" onclick="document.getElementById('moFinish').remove();nav('meu-treino')">
+            Fechar
+          </button>
+          <button class="bco" style="flex:2" onclick="document.getElementById('moFinish').remove();_triggerFeedback()">
+            <i class="ti ti-mood-smile"></i> Dar feedback
+          </button>
+        </div>
       </div>
     </div>`;
   mo.onclick = e => { if (e.target === mo) { mo.remove(); nav('meu-treino'); } };
   document.body.appendChild(mo);
+
+  // Guarda callback para o botão de feedback
+  window._triggerFeedback = () => { if (onFeedback) onFeedback(); };
 }
 
 function rMinhaAvaliacao() {
@@ -2366,6 +2451,289 @@ function rPerfilAluno() {
         <div class="sc"><div class="sl">Objetivo</div><div style="font-size:13px;font-weight:600;color:var(--color-text-primary)">${student.goal || '—'}</div></div>
       </div>
     </div>`;
+}
+
+// ============================================================
+// AGENDAMENTOS — PROFESSOR
+// ============================================================
+let SCHEDULES = [];
+
+async function loadSchedules() {
+  try {
+    SCHEDULES = await dbGetScheduledAssessments();
+  } catch(e) {
+    console.warn('loadSchedules:', e.message);
+  }
+}
+
+function openAgendarAv() {
+  document.getElementById('agStudentSel').innerHTML =
+    STUDENTS.filter(s => s.active !== false)
+      .map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  // Data mínima = hoje
+  document.getElementById('agDate').min = new Date().toISOString().slice(0, 10);
+  document.getElementById('agDate').value = '';
+  document.getElementById('agTime').value = '';
+  document.getElementById('agNotes').value = '';
+  openM('moAgendarAv');
+}
+
+async function saveAgendamento() {
+  const studentId = document.getElementById('agStudentSel').value;
+  const date      = document.getElementById('agDate').value;
+  const time      = document.getElementById('agTime').value;
+  const notes     = document.getElementById('agNotes').value.trim();
+
+  if (!studentId || !date || !time) {
+    showToast('Selecione aluno, data e horário', 'aviso'); return;
+  }
+
+  setBtnLoading('btnSaveAgend', true);
+  try {
+    const saved = await dbCreateScheduledAssessment({
+      student_id:      studentId,
+      scheduled_date:  date,
+      scheduled_time:  time,
+      notes:           notes || null,
+      status:          'pendente',
+    });
+    SCHEDULES.unshift({ ...saved, students: STUDENTS.find(s => s.id === studentId) });
+
+    // Notifica o aluno
+    const s    = STUDENTS.find(st => st.id === studentId);
+    const dFmt = new Date(date + 'T' + time).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+    if (s?.user_id) {
+      await dbCreateNotification(s.user_id,
+        '📅 Avaliação agendada!',
+        `Seu professor agendou uma avaliação física para ${dFmt}.${notes ? ' ' + notes : ''}`
+      ).catch(() => {});
+    }
+
+    closeM('moAgendarAv');
+    showToast('Avaliação agendada e aluno notificado!', 'sucesso');
+    rAgendamentos();
+  } catch(e) {
+    showToast('Erro: ' + e.message, 'erro');
+  } finally {
+    setBtnLoading('btnSaveAgend', false);
+  }
+}
+
+async function cancelAgendamento(id) {
+  if (!confirm('Cancelar este agendamento?')) return;
+  try {
+    await dbUpdateScheduledAssessment(id, { status: 'cancelada' });
+    const ag = SCHEDULES.find(a => a.id === id);
+    if (ag) ag.status = 'cancelada';
+    showToast('Agendamento cancelado');
+    rAgendamentos();
+  } catch(e) {
+    showToast('Erro: ' + e.message, 'erro');
+  }
+}
+
+async function concluirAgendamento(id) {
+  try {
+    await dbUpdateScheduledAssessment(id, { status: 'concluída' });
+    const ag = SCHEDULES.find(a => a.id === id);
+    if (ag) ag.status = 'concluída';
+    showToast('Marcado como concluído!', 'sucesso');
+    rAgendamentos();
+  } catch(e) {
+    showToast('Erro: ' + e.message, 'erro');
+  }
+}
+
+function statusBadge(status) {
+  const map = {
+    'pendente':  { color:'#E8A020', bg:'#FEF3DC', label:'Pendente' },
+    'concluída': { color:'#1D9E75', bg:'#E1F5EE', label:'Concluída' },
+    'cancelada': { color:'#CC3333', bg:'#FDEAEA', label:'Cancelada' },
+  };
+  const s = map[status] ?? map['pendente'];
+  return `<span style="font-size:11px;font-weight:600;padding:2px 10px;border-radius:20px;
+    background:${s.bg};color:${s.color}">${s.label}</span>`;
+}
+
+function rAgendamentos() {
+  const pendentes  = SCHEDULES.filter(a => a.status === 'pendente');
+  const historico  = SCHEDULES.filter(a => a.status !== 'pendente');
+
+  document.getElementById('MC').innerHTML = `
+    <p class="pt">Agendamentos</p>
+    <p class="ps">Gerencie as avaliações físicas agendadas.</p>
+    <div style="margin-bottom:1rem">
+      <button class="bco" onclick="openAgendarAv()"><i class="ti ti-calendar-plus"></i> Agendar avaliação</button>
+    </div>
+
+    ${pendentes.length ? `
+    <div class="cd" style="margin-bottom:1rem">
+      <div class="ct" style="margin-bottom:1rem">Próximas (${pendentes.length})</div>
+      ${pendentes.map(ag => {
+        const name = ag.students?.name ?? STUDENTS.find(s => s.id === ag.student_id)?.name ?? '—';
+        const dt   = new Date(ag.scheduled_date + 'T' + ag.scheduled_time);
+        const dFmt = dt.toLocaleDateString('pt-BR', { weekday:'short', day:'2-digit', month:'2-digit' });
+        const tFmt = ag.scheduled_time.slice(0,5);
+        return `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;
+                            border-bottom:0.5px solid var(--color-border-tertiary)">
+          <div style="background:var(--brand-l);border-radius:var(--border-radius-md);
+                      padding:8px 12px;text-align:center;min-width:56px;flex-shrink:0">
+            <div style="font-size:11px;font-weight:600;color:var(--brand-d);text-transform:capitalize">${dFmt.split(',')[0]}</div>
+            <div style="font-size:18px;font-weight:700;color:var(--brand)">${dt.getDate().toString().padStart(2,'0')}</div>
+            <div style="font-size:10px;color:var(--brand-d)">${tFmt}</div>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">${name}</div>
+            ${ag.notes ? `<div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px">${ag.notes}</div>` : ''}
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <button class="bas" style="font-size:11px;padding:3px 8px" onclick="concluirAgendamento('${ag.id}')">
+              <i class="ti ti-check"></i> Concluir
+            </button>
+            <button class="bda" style="font-size:11px;padding:3px 8px" onclick="cancelAgendamento('${ag.id}')">
+              <i class="ti ti-x"></i>
+            </button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>` : `<div class="cd" style="margin-bottom:1rem;text-align:center;padding:2rem;color:var(--color-text-secondary)">
+      <i class="ti ti-calendar-off" style="font-size:32px;margin-bottom:8px;display:block"></i>
+      <p style="font-size:13px">Nenhuma avaliação pendente.</p>
+    </div>`}
+
+    ${historico.length ? `
+    <div class="cd">
+      <div class="ct" style="margin-bottom:1rem">Histórico</div>
+      ${historico.map(ag => {
+        const name = ag.students?.name ?? STUDENTS.find(s => s.id === ag.student_id)?.name ?? '—';
+        const dFmt = new Date(ag.scheduled_date).toLocaleDateString('pt-BR');
+        return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;
+                            border-bottom:0.5px solid var(--color-border-tertiary)">
+          <div style="flex:1">
+            <span style="font-size:13px;color:var(--color-text-primary);font-weight:500">${name}</span>
+            <span style="font-size:12px;color:var(--color-text-tertiary);margin-left:8px">${dFmt} · ${ag.scheduled_time?.slice(0,5)}</span>
+          </div>
+          ${statusBadge(ag.status)}
+        </div>`;
+      }).join('')}
+    </div>` : ''}`;
+}
+
+// ============================================================
+// AGENDAMENTOS — ALUNO
+// ============================================================
+async function rMeusAgendamentos() {
+  document.getElementById('MC').innerHTML = `
+    <p class="pt">Agendamentos</p>
+    <p class="ps">Suas avaliações físicas agendadas pelo professor.</p>
+    <div style="text-align:center;padding:2rem;color:var(--color-text-secondary)">
+      <i class="ti ti-loader" style="font-size:28px"></i>
+    </div>`;
+
+  try {
+    const schedules = await dbGetStudentSchedules(curUser.sid);
+    const pendentes = schedules.filter(a => a.status === 'pendente');
+    const historico = schedules.filter(a => a.status !== 'pendente');
+
+    document.getElementById('MC').innerHTML = `
+      <p class="pt">Agendamentos</p>
+      <p class="ps">Suas avaliações físicas agendadas pelo professor.</p>
+
+      ${!schedules.length ? `
+      <div class="cd" style="text-align:center;padding:2.5rem;color:var(--color-text-secondary)">
+        <i class="ti ti-calendar-off" style="font-size:36px;margin-bottom:12px;display:block"></i>
+        <div style="font-size:15px;font-weight:600;margin-bottom:6px">Nenhum agendamento</div>
+        <p style="font-size:13px">Seu professor ainda não agendou nenhuma avaliação.</p>
+      </div>` : ''}
+
+      ${pendentes.length ? `
+      <div class="cd" style="margin-bottom:1rem">
+        <div class="ct" style="margin-bottom:1rem">Próximas</div>
+        ${pendentes.map(ag => {
+          const dt   = new Date(ag.scheduled_date + 'T' + ag.scheduled_time);
+          const dFmt = dt.toLocaleDateString('pt-BR', { weekday:'long', day:'2-digit', month:'long' });
+          const tFmt = ag.scheduled_time.slice(0,5);
+          const isToday = ag.scheduled_date === new Date().toISOString().slice(0,10);
+          return `<div style="background:var(--brand-l);border-radius:var(--border-radius-md);
+                              padding:16px;margin-bottom:8px">
+            ${isToday ? `<div style="font-size:11px;font-weight:700;color:var(--brand);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">📅 HOJE</div>` : ''}
+            <div style="font-size:15px;font-weight:600;color:var(--color-text-primary);text-transform:capitalize">${dFmt}</div>
+            <div style="font-size:22px;font-weight:700;color:var(--brand);margin:4px 0">${tFmt}</div>
+            ${ag.notes ? `<div style="font-size:13px;color:var(--color-text-secondary);margin-top:6px;font-style:italic">"${ag.notes}"</div>` : ''}
+          </div>`;
+        }).join('')}
+      </div>` : ''}
+
+      ${historico.length ? `
+      <div class="cd">
+        <div class="ct" style="margin-bottom:1rem">Histórico</div>
+        ${historico.map(ag => {
+          const dFmt = new Date(ag.scheduled_date).toLocaleDateString('pt-BR');
+          return `<div style="display:flex;align-items:center;justify-content:space-between;
+                              padding:8px 0;border-bottom:0.5px solid var(--color-border-tertiary)">
+            <span style="font-size:13px;color:var(--color-text-secondary)">${dFmt} · ${ag.scheduled_time?.slice(0,5)}</span>
+            ${statusBadge(ag.status)}
+          </div>`;
+        }).join('')}
+      </div>` : ''}`;
+  } catch(e) {
+    showToast('Erro ao carregar agendamentos', 'erro');
+  }
+}
+
+// ============================================================
+// FEEDBACK DE TREINO
+// ============================================================
+let selectedEffort = null;
+let feedbackHistoryId = null;
+
+function selectEffort(val) {
+  selectedEffort = val;
+  document.querySelectorAll('#effortGrid label').forEach(el => {
+    el.style.borderColor     = 'var(--color-border-secondary)';
+    el.style.background      = 'transparent';
+    el.style.color           = 'var(--color-text-secondary)';
+  });
+  const el = document.getElementById(`effort-${val}`);
+  if (el) {
+    el.style.borderColor = 'var(--brand)';
+    el.style.background  = 'var(--brand-l)';
+    el.style.color       = 'var(--brand-d)';
+  }
+}
+
+function openFeedbackModal(historyId) {
+  feedbackHistoryId = historyId;
+  selectedEffort    = null;
+  document.getElementById('fbNotes').value = '';
+  // Reseta visual
+  document.querySelectorAll('#effortGrid label').forEach(el => {
+    el.style.borderColor = 'var(--color-border-secondary)';
+    el.style.background  = 'transparent';
+    el.style.color       = 'var(--color-text-secondary)';
+  });
+  openM('moFeedback');
+}
+
+async function saveFeedback() {
+  if (!selectedEffort) {
+    showToast('Selecione o nível de esforço', 'aviso'); return;
+  }
+  setBtnLoading('btnSaveFeedback', true);
+  try {
+    await dbSaveFeedback({
+      student_id:           curUser.sid,
+      training_history_id:  feedbackHistoryId,
+      effort_level:         selectedEffort,
+      notes:                document.getElementById('fbNotes').value.trim() || null,
+    });
+    closeM('moFeedback');
+    showToast('Feedback enviado! 💪', 'sucesso');
+  } catch(e) {
+    showToast('Erro: ' + e.message, 'erro');
+  } finally {
+    setBtnLoading('btnSaveFeedback', false);
+  }
 }
 
 // ============================================================
