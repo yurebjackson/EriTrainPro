@@ -337,3 +337,26 @@ async function dbMarkAllNotifsRead(userId) {
     .eq('read', false);
   if (error) throw error;
 }
+
+// ============================================================
+// AVATAR (Storage)
+// ============================================================
+
+async function uploadAvatar(userId, file) {
+  const ext  = file.name.split('.').pop().toLowerCase();
+  const path = `${userId}/avatar.${ext}`;
+
+  const { error } = await supabaseClient.storage
+    .from('avatars')
+    .upload(path, file, { upsert: true, contentType: file.type });
+  if (error) throw error;
+
+  const { data } = supabaseClient.storage
+    .from('avatars')
+    .getPublicUrl(path);
+
+  // Salva URL no profile com cache-bust
+  const url = `${data.publicUrl}?t=${Date.now()}`;
+  await updateProfile(userId, { avatar_url: url });
+  return url;
+}
