@@ -334,12 +334,7 @@ body{transition:background .2s,color .2s}
     </div>
     <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:1.5rem">Plataforma completa de treinos personalizados</p>
 
-    <div class="rtabs">
-      <div class="rtab on" id="rtA" onclick="selRole('professor')"><i class="ti ti-school"></i> Professor</div>
-      <div class="rtab"    id="rtB" onclick="selRole('aluno')"><i class="ti ti-user"></i> Aluno</div>
-    </div>
-
-    <!-- Formulário de login -->
+    <!-- Formulário de login único -->
     <div id="loginForm">
       <div class="fg">
         <label class="fl">E-mail</label>
@@ -350,20 +345,66 @@ body{transition:background .2s,color .2s}
         <input class="fi" id="lPass" type="password" placeholder="••••••" onkeydown="if(event.key==='Enter')doLogin()"/>
       </div>
       <button class="bp" id="btnLogin" data-label="Entrar" onclick="doLogin()">Entrar</button>
-      <p style="text-align:center;margin-top:1rem;font-size:13px;color:var(--color-text-secondary)">
-        Não tem conta? <button class="link-btn" onclick="toggleRegisterForm(true)">Cadastre-se</button>
-      </p>
     </div>
+  </div>
+</div>
 
-    <!-- Formulário de cadastro -->
-    <div id="registerForm" style="display:none">
-      <div class="fg"><label class="fl">Nome completo</label><input class="fi" id="regName" placeholder="Seu nome"/></div>
-      <div class="fg"><label class="fl">E-mail</label><input class="fi" id="regEmail" type="email" placeholder="seu@email.com"/></div>
-      <div class="fg"><label class="fl">Senha (mín. 6 caracteres)</label><input class="fi" id="regPass" type="password" placeholder="••••••"/></div>
-      <button class="bp" id="btnRegister" data-label="Criar conta" onclick="doRegister()">Criar conta</button>
-      <p style="text-align:center;margin-top:1rem;font-size:13px;color:var(--color-text-secondary)">
-        Já tem conta? <button class="link-btn" onclick="toggleRegisterForm(false)">Entrar</button>
+<!-- ===== MODAL: CRIAR PROFESSOR (ADMIN) ===== -->
+<div class="mo" id="moNewProf">
+  <div class="mb" style="max-width:460px">
+    <div class="mh">
+      <span class="mt">Criar conta de professor</span>
+      <button class="bcl" onclick="closeM('moNewProf')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="mbd">
+      <div class="fg">
+        <label class="fl">Nome completo</label>
+        <input class="fi" id="npName" placeholder="Ex: João Silva"/>
+      </div>
+      <div class="fg">
+        <label class="fl">E-mail</label>
+        <input class="fi" id="npEmail" type="email" placeholder="professor@email.com"/>
+      </div>
+      <div class="fg">
+        <label class="fl">Plano</label>
+        <select class="fsel" id="npPlan">
+          <option value="basic">Basic — até 10 alunos</option>
+          <option value="pro">Pro — até 30 alunos</option>
+          <option value="unlimited">Unlimited — ilimitado</option>
+        </select>
+      </div>
+      <div style="background:var(--brand-l);border-radius:8px;padding:12px;margin-bottom:1rem;font-size:12px;color:var(--brand-d)">
+        <i class="ti ti-mail"></i> Uma senha temporária será gerada e enviada automaticamente para o e-mail do professor.
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="bcn" onclick="closeM('moNewProf')">Cancelar</button>
+        <button class="bco" id="btnCreateProf" data-label="Criar e enviar e-mail" onclick="adminCreateProfessor()">
+          <i class="ti ti-send"></i> Criar e enviar e-mail
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: PRIMEIRO ACESSO — TROCA DE SENHA ===== -->
+<div class="mo" id="moFirstAccess">
+  <div class="mb" style="max-width:420px">
+    <div class="mh">
+      <span class="mt">🔐 Defina sua nova senha</span>
+    </div>
+    <div class="mbd">
+      <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:1.5rem">
+        Este é seu primeiro acesso. Por segurança, defina uma senha pessoal antes de continuar.
       </p>
+      <div class="fg">
+        <label class="fl">Nova senha (mín. 8 caracteres)</label>
+        <input class="fi" id="newPass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doChangeFirstPassword()"/>
+      </div>
+      <div class="fg">
+        <label class="fl">Confirmar senha</label>
+        <input class="fi" id="newPassConfirm" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doChangeFirstPassword()"/>
+      </div>
+      <button class="bp" id="btnFirstPass" data-label="Salvar e entrar" onclick="doChangeFirstPassword()">Salvar e entrar</button>
     </div>
   </div>
 </div>
@@ -863,7 +904,16 @@ async function loadAllData() {
 function buildSidebar() {
   const s = document.getElementById('SB');
 
-  if (curUser.role === 'professor') {
+  if (curUser.role === 'admin') {
+    s.innerHTML = `
+      <div class="ss">Administração</div>
+      <div class="si" data-p="admin-dashboard" onclick="nav('admin-dashboard')"><i class="ti ti-layout-dashboard"></i>Visão Geral</div>
+      <div class="si" data-p="admin-professores" onclick="nav('admin-professores')"><i class="ti ti-users"></i>Professores</div>`;
+    _buildBottomNav([
+      { p:'admin-dashboard',   icon:'ti-layout-dashboard', label:'Painel' },
+      { p:'admin-professores', icon:'ti-users',            label:'Professores' },
+    ]);
+  } else if (curUser.role === 'professor') {
     s.innerHTML = `
       <div class="ss">Painel do professor</div>
       <div class="si" data-p="dashboard"       onclick="nav('dashboard')"><i class="ti ti-layout-dashboard"></i>Visão Geral</div>
@@ -938,6 +988,7 @@ function nav(page) {
     dashboard: rDashboard, alunos: rAlunos, exercicios: rExercicios,
     planos: rPlanos, avaliacoes: rAvaliacoes, 'historico-prof': rHistoricoProf,
     'meu-perfil': rMeuPerfil, agendamentos: rAgendamentos,
+    'admin-dashboard': rAdminDashboard, 'admin-professores': rAdminProfessores,
     'meu-treino': rMeuTreino,
     'minha-avaliacao': rMinhaAvaliacao, 'meu-historico': rMeuHistorico, progresso: rProgresso,
     'perfil-aluno': rPerfilAluno, 'meus-agendamentos': rMeusAgendamentos,
@@ -2451,6 +2502,142 @@ function rPerfilAluno() {
         <div class="sc"><div class="sl">Objetivo</div><div style="font-size:13px;font-weight:600;color:var(--color-text-primary)">${student.goal || '—'}</div></div>
       </div>
     </div>`;
+}
+
+// ============================================================
+// PAINEL ADMIN
+// ============================================================
+let PROFESSORES = [];
+
+async function loadProfessores() {
+  try {
+    const profs = await dbGetAllProfessores();
+    PROFESSORES = await Promise.all(profs.map(async p => {
+      const stats = await dbGetProfessorStats(p.id).catch(() => ({ total: 0, ativos: 0 }));
+      return { ...p, ...stats };
+    }));
+  } catch(e) {
+    console.warn('loadProfessores:', e.message);
+  }
+}
+
+async function rAdminDashboard() {
+  document.getElementById('MC').innerHTML = `
+    <p class="pt">Painel Admin</p>
+    <p class="ps">Visão geral da plataforma.</p>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:3rem;color:var(--color-text-tertiary)">
+      <i class="ti ti-loader" style="font-size:24px"></i> Carregando...
+    </div>`;
+
+  await loadProfessores();
+
+  const totalProfs  = PROFESSORES.length;
+  const ativos      = PROFESSORES.filter(p => p.active !== false).length;
+  const totalAlunos = PROFESSORES.reduce((s, p) => s + (p.total ?? 0), 0);
+
+  document.getElementById('MC').innerHTML = `
+    <p class="pt">Painel Admin</p>
+    <p class="ps">Visão geral da plataforma FitTrack Pro.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:1.5rem">
+      <div class="cd" style="text-align:center">
+        <div style="font-size:32px;font-weight:700;color:var(--brand)">${totalProfs}</div>
+        <div style="font-size:12px;color:var(--color-text-secondary)">Professores</div>
+      </div>
+      <div class="cd" style="text-align:center">
+        <div style="font-size:32px;font-weight:700;color:var(--brand)">${ativos}</div>
+        <div style="font-size:12px;color:var(--color-text-secondary)">Ativos</div>
+      </div>
+      <div class="cd" style="text-align:center">
+        <div style="font-size:32px;font-weight:700;color:var(--brand)">${totalAlunos}</div>
+        <div style="font-size:12px;color:var(--color-text-secondary)">Alunos no sistema</div>
+      </div>
+    </div>
+
+    <div class="cd">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <span class="ct">Professores recentes</span>
+        <button class="bas" onclick="nav('admin-professores')">Ver todos</button>
+      </div>
+      ${PROFESSORES.slice(0,5).map(p => _profRow(p)).join('') || '<p style="font-size:13px;color:var(--color-text-secondary)">Nenhum professor ainda.</p>'}
+    </div>`;
+}
+
+async function rAdminProfessores() {
+  document.getElementById('MC').innerHTML = `
+    <p class="pt">Professores</p><p class="ps">Gerencie todos os professores da plataforma.</p>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:3rem;color:var(--color-text-tertiary)">
+      <i class="ti ti-loader" style="font-size:24px"></i> Carregando...
+    </div>`;
+
+  await loadProfessores();
+
+  document.getElementById('MC').innerHTML = `
+    <p class="pt">Professores</p><p class="ps">Gerencie todos os professores da plataforma.</p>
+    <div style="margin-bottom:1rem">
+      <button class="bco" onclick="openM('moNewProf')"><i class="ti ti-plus"></i> Criar professor</button>
+    </div>
+    <div class="cd">
+      ${PROFESSORES.length
+        ? PROFESSORES.map(p => _profRow(p, true)).join('')
+        : '<p style="font-size:13px;color:var(--color-text-secondary)">Nenhum professor cadastrado ainda.</p>'}
+    </div>`;
+}
+
+function _profRow(p, showActions = false) {
+  const ativo    = p.active !== false;
+  const planLabel = { basic:'Basic', pro:'Pro', unlimited:'Unlimited' }[p.plan_type] ?? p.plan_type ?? '—';
+  return `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;
+                      border-bottom:0.5px solid var(--color-border-tertiary)">
+    ${avatarHTML(p.name, p.avatar_url, 36, 't2')}
+    <div style="flex:1;min-width:0">
+      <div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">${p.name}</div>
+      <div style="font-size:12px;color:var(--color-text-secondary)">${p.total ?? 0} alunos · Plano ${planLabel}</div>
+    </div>
+    <span style="font-size:11px;font-weight:600;padding:2px 10px;border-radius:20px;
+      background:${ativo ? 'var(--brand-l)' : 'var(--color-background-tertiary)'};
+      color:${ativo ? 'var(--brand-d)' : 'var(--color-text-tertiary)'}">
+      ${ativo ? 'Ativo' : 'Inativo'}
+    </span>
+    ${showActions ? `<button class="${ativo ? 'bda' : 'bas'}" style="font-size:11px;padding:3px 10px"
+      onclick="adminToggleProf('${p.id}', ${!ativo})">
+      ${ativo ? 'Desativar' : 'Reativar'}
+    </button>` : ''}
+  </div>`;
+}
+
+async function adminCreateProfessor() {
+  const name  = document.getElementById('npName').value.trim();
+  const email = document.getElementById('npEmail').value.trim();
+  const plan  = document.getElementById('npPlan').value;
+
+  if (!name || !email) { showToast('Preencha nome e e-mail', 'aviso'); return; }
+
+  setBtnLoading('btnCreateProf', true);
+  try {
+    await dbCreateProfessorViaFunction(name, email, plan);
+    closeM('moNewProf');
+    document.getElementById('npName').value  = '';
+    document.getElementById('npEmail').value = '';
+    showToast(`Professor ${name} criado! E-mail enviado para ${email}`, 'sucesso');
+    rAdminProfessores();
+  } catch(e) {
+    showToast('Erro: ' + e.message, 'erro');
+  } finally {
+    setBtnLoading('btnCreateProf', false);
+  }
+}
+
+async function adminToggleProf(profileId, activate) {
+  try {
+    await dbToggleProfessorActive(profileId, activate);
+    const p = PROFESSORES.find(x => x.id === profileId);
+    if (p) p.active = activate;
+    showToast(activate ? 'Professor reativado!' : 'Professor desativado', 'sucesso');
+    rAdminProfessores();
+  } catch(e) {
+    showToast('Erro: ' + e.message, 'erro');
+  }
 }
 
 // ============================================================
