@@ -434,3 +434,52 @@ async function dbGetFeedbacks(studentId) {
   if (error) throw error;
   return data ?? [];
 }
+
+// ============================================================
+// ADMIN
+// ============================================================
+
+async function dbGetAllProfessores() {
+  const { data, error } = await supabaseClient
+    .from('profiles')
+    .select('*')
+    .eq('role', 'professor')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+async function dbGetProfessorStats(professorId) {
+  const { data, error } = await supabaseClient
+    .from('students')
+    .select('id, active')
+    .eq('professor_id', professorId);
+  if (error) return { total: 0, ativos: 0 };
+  const total  = data.length;
+  const ativos = data.filter(s => s.active !== false).length;
+  return { total, ativos };
+}
+
+async function dbToggleProfessorActive(profileId, active) {
+  // Seta active no profile — usaremos coluna active em profiles
+  const { error } = await supabaseClient
+    .from('profiles')
+    .update({ active })
+    .eq('id', profileId);
+  if (error) throw error;
+}
+
+async function dbCreateProfessorViaFunction(name, email, planType) {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/create-professor`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({ name, email, plan_type: planType }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error ?? 'Erro ao criar professor');
+  return json;
+}
