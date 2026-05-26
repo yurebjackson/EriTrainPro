@@ -446,7 +446,22 @@ async function dbGetAllProfessores() {
     .eq('role', 'professor')
     .order('created_at', { ascending: false });
   if (error) throw error;
-  return data ?? [];
+
+  // Busca e-mails via tabela de usuários (admin pode ver)
+  const ids = (data ?? []).map(p => p.id);
+  let emailMap = {};
+  if (ids.length) {
+    // Tenta buscar e-mails via auth.users — só funciona com service role
+    // Como não temos, buscamos da tabela students ou deixamos vazio
+    // Alternativa: salvar email em profiles no momento da criação
+    const { data: authData } = await supabaseClient
+      .from('profiles')
+      .select('id, email')
+      .in('id', ids);
+    (authData ?? []).forEach(u => { emailMap[u.id] = u.email; });
+  }
+
+  return (data ?? []).map(p => ({ ...p, email: emailMap[p.id] ?? p.email ?? '' }));
 }
 
 async function dbGetProfessorStats(professorId) {
