@@ -357,30 +357,59 @@ body{transition:background .2s,color .2s}
       <button class="bcl" onclick="closeM('moNewProf')"><i class="ti ti-x"></i></button>
     </div>
     <div class="mbd">
-      <div class="fg">
-        <label class="fl">Nome completo</label>
-        <input class="fi" id="npName" placeholder="Ex: João Silva"/>
+      <!-- Formulário -->
+      <div id="npForm">
+        <div class="fg">
+          <label class="fl">Nome completo</label>
+          <input class="fi" id="npName" placeholder="Ex: João Silva"/>
+        </div>
+        <div class="fg">
+          <label class="fl">E-mail</label>
+          <input class="fi" id="npEmail" type="email" placeholder="professor@email.com"/>
+        </div>
+        <div class="fg">
+          <label class="fl">Plano</label>
+          <select class="fsel" id="npPlan">
+            <option value="basic">Basic — até 10 alunos</option>
+            <option value="pro">Pro — até 30 alunos</option>
+            <option value="unlimited">Unlimited — ilimitado</option>
+          </select>
+        </div>
+        <div style="background:var(--brand-l);border-radius:8px;padding:12px;margin-bottom:1rem;font-size:12px;color:var(--brand-d)">
+          <i class="ti ti-mail"></i> Uma senha temporária será gerada. Passe as credenciais para o professor.
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="bcn" onclick="closeM('moNewProf')">Cancelar</button>
+          <button class="bco" id="btnCreateProf" data-label="Criar professor" onclick="adminCreateProfessor()">
+            <i class="ti ti-user-plus"></i> Criar professor
+          </button>
+        </div>
       </div>
-      <div class="fg">
-        <label class="fl">E-mail</label>
-        <input class="fi" id="npEmail" type="email" placeholder="professor@email.com"/>
-      </div>
-      <div class="fg">
-        <label class="fl">Plano</label>
-        <select class="fsel" id="npPlan">
-          <option value="basic">Basic — até 10 alunos</option>
-          <option value="pro">Pro — até 30 alunos</option>
-          <option value="unlimited">Unlimited — ilimitado</option>
-        </select>
-      </div>
-      <div style="background:var(--brand-l);border-radius:8px;padding:12px;margin-bottom:1rem;font-size:12px;color:var(--brand-d)">
-        <i class="ti ti-mail"></i> Uma senha temporária será gerada e enviada automaticamente para o e-mail do professor.
-      </div>
-      <div style="display:flex;gap:8px;justify-content:flex-end">
-        <button class="bcn" onclick="closeM('moNewProf')">Cancelar</button>
-        <button class="bco" id="btnCreateProf" data-label="Criar e enviar e-mail" onclick="adminCreateProfessor()">
-          <i class="ti ti-send"></i> Criar e enviar e-mail
-        </button>
+
+      <!-- Resultado — mostrado após criação -->
+      <div id="npResult" style="display:none">
+        <div style="text-align:center;margin-bottom:1.5rem">
+          <div style="font-size:40px;margin-bottom:8px">✅</div>
+          <div style="font-size:16px;font-weight:700;color:var(--color-text-primary)">Professor criado!</div>
+          <div style="font-size:13px;color:var(--color-text-secondary);margin-top:4px">Passe as credenciais abaixo para o professor.</div>
+        </div>
+        <div style="background:var(--color-background-secondary);border-radius:10px;padding:16px;margin-bottom:1rem">
+          <div style="margin-bottom:12px">
+            <div style="font-size:10px;font-weight:600;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">E-mail</div>
+            <div style="font-size:14px;font-weight:600;color:var(--color-text-primary)" id="npResultEmail"></div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:600;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Senha temporária</div>
+            <div style="font-size:22px;font-weight:700;color:var(--brand);letter-spacing:3px;font-family:monospace" id="npResultPass"></div>
+          </div>
+        </div>
+        <div style="background:#FEF3DC;border-radius:8px;padding:12px;margin-bottom:1rem;font-size:12px;color:#633806">
+          ⚠️ O professor deverá trocar a senha no primeiro acesso. Guarde essas informações com segurança.
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="bas" style="flex:1" onclick="copiarCredenciais()"><i class="ti ti-copy"></i> Copiar credenciais</button>
+          <button class="bco" style="flex:1" onclick="fecharNpResult()"><i class="ti ti-check"></i> Fechar</button>
+        </div>
       </div>
     </div>
   </div>
@@ -2615,17 +2644,41 @@ async function adminCreateProfessor() {
 
   setBtnLoading('btnCreateProf', true);
   try {
-    await dbCreateProfessorViaFunction(name, email, plan);
-    closeM('moNewProf');
-    document.getElementById('npName').value  = '';
-    document.getElementById('npEmail').value = '';
-    showToast(`Professor ${name} criado! E-mail enviado para ${email}`, 'sucesso');
+    const result = await dbCreateProfessorViaFunction(name, email, plan);
+
+    // Mostra tela de resultado com credenciais
+    document.getElementById('npForm').style.display   = 'none';
+    document.getElementById('npResult').style.display = 'block';
+    document.getElementById('npResultEmail').textContent = email;
+    document.getElementById('npResultPass').textContent  = result.tempPassword;
+
+    showToast(`Professor ${name} criado com sucesso!`, 'sucesso');
     rAdminProfessores();
   } catch(e) {
     showToast('Erro: ' + e.message, 'erro');
   } finally {
     setBtnLoading('btnCreateProf', false);
   }
+}
+
+function copiarCredenciais() {
+  const email = document.getElementById('npResultEmail').textContent;
+  const pass  = document.getElementById('npResultPass').textContent;
+  const texto = `FitTrack Pro — Credenciais de acesso\nE-mail: ${email}\nSenha temporária: ${pass}\nAcesse: https://yurebjackson.github.io/FitTrackPro/`;
+  navigator.clipboard.writeText(texto)
+    .then(() => showToast('Credenciais copiadas!', 'sucesso'))
+    .catch(() => showToast('Não foi possível copiar. Copie manualmente.', 'aviso'));
+}
+
+function fecharNpResult() {
+  closeM('moNewProf');
+  // Reseta o modal para a próxima vez
+  setTimeout(() => {
+    document.getElementById('npForm').style.display   = 'block';
+    document.getElementById('npResult').style.display = 'none';
+    document.getElementById('npName').value  = '';
+    document.getElementById('npEmail').value = '';
+  }, 300);
 }
 
 async function adminToggleProf(profileId, activate) {
