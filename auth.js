@@ -29,12 +29,11 @@ async function initAuth() {
 }
 
 // ============================================================
-// Login com e-mail + senha
+// Login com e-mail + senha — detecção automática de role
 // ============================================================
 async function doLogin() {
   const email    = document.getElementById('lEmail').value.trim();
   const password = document.getElementById('lPass').value;
-  const role     = curRole; // 'professor' | 'aluno'
 
   if (!email || !password) {
     showToast('Preencha e-mail e senha', 'aviso');
@@ -47,21 +46,20 @@ async function doLogin() {
     const result = await signIn(email, password);
     CURRENT_USER = result.user;
 
-    // Tenta buscar o profile — getProfile já cria se não existir
     CURRENT_PROFILE = await getProfile(CURRENT_USER.id);
 
     if (!CURRENT_PROFILE) {
-      showToast('Perfil não encontrado. Tente se cadastrar novamente.', 'erro');
+      showToast('Perfil não encontrado.', 'erro');
       await signOut();
       setBtnLoading('btnLogin', false);
       return;
     }
 
-    if (CURRENT_PROFILE.role !== role) {
-      await signOut();
-      CURRENT_USER = CURRENT_PROFILE = null;
-      showToast('Perfil incorreto. Selecione "' + (role === 'professor' ? 'Professor' : 'Aluno') + '".', 'aviso');
+    // Primeiro acesso — força troca de senha
+    if (CURRENT_PROFILE.first_access === true) {
       setBtnLoading('btnLogin', false);
+      document.getElementById('LS').style.display = 'none';
+      openM('moFirstAccess');
       return;
     }
 
@@ -327,6 +325,42 @@ function requireRole(role) {
 
 function isProfessor() { return requireRole('professor'); }
 function isAluno()     { return requireRole('aluno'); }
+function isAdmin()     { return requireRole('admin'); }
+
+// ============================================================
+// Primeiro acesso — troca obrigatória de senha
+// ============================================================
+async function doChangeFirstPassword() {
+  const newPass     = document.getElementById('newPass').value;
+  const newPassConf = document.getElementById('newPassConfirm').value;
+
+  if (!newPass || newPass.length < 8) {
+    showToast('A senha deve ter ao menos 8 caracteres', 'aviso'); return;
+  }
+  if (newPass !== newPassConf) {
+    showToast('As senhas não coincidem', 'aviso'); return;
+  }
+
+  setBtnLoading('btnFirstPass', true);
+
+  try {
+    // Atualiza senha no Supabase Auth
+    const { error } = await supabaseClient.auth.updateUser({ password: newPass });
+    if (error) throw error;
+
+    // Remove flag de primeiro acesso
+    await updateProfile(CURRENT_USER.id, { first_access: false });
+    CURRENT_PROFILE.first_access = false;
+
+    closeM('moFirstAccess');
+    showToast('Senha definida com sucesso! Bem-vindo!', 'sucesso');
+    await bootApp();
+  } catch(e) {
+    showToast('Erro: ' + e.message, 'erro');
+  } finally {
+    setBtnLoading('btnFirstPass', false);
+  }
+}
 
 // ============================================================
 // Helpers de interface
@@ -359,23 +393,31 @@ async function bootApp() {
   document.getElementById('NU').textContent       = CURRENT_PROFILE.name;
 
   const nb = document.getElementById('NB');
-  nb.textContent = isProfessor() ? 'Professor' : 'Aluno';
-  nb.className   = 'rb ' + (isProfessor() ? 'rp' : 'ral');
+  if (CURRENT_PROFILE.role === 'admin') {
+    nb.textContent = 'Admin';
+    nb.className   = 'rb' ;
+    nb.style.background = '#6B6B69';
+    nb.style.color = 'white';
+  } else {
+    nb.textContent = isProfessor() ? 'Professor' : 'Aluno';
+    nb.className   = 'rb ' + (isProfessor() ? 'rp' : 'ral');
+  }
 
   curUser = {
     role:     CURRENT_PROFILE.role,
     name:     CURRENT_PROFILE.name,
-    username: CURRENT_USER.email, // email vem do auth.user, não do profile
-    sid:      null, // preenchido abaixo para alunos
+    username: CURRENT_USER.email,
+    sid:      null,
   };
 
   buildSidebar();
 
-  if (isProfessor()) {
+  if (CURRENT_PROFILE.role === 'admin') {
+    nav('admin-dashboard');
+  } else if (isProfessor()) {
     await loadAllData();
     nav('dashboard');
   } else {
-    // Mostra sininho só para alunos
     const notifWrap = document.getElementById('notifWrap');
     if (notifWrap) notifWrap.style.display = 'flex';
 
