@@ -2871,29 +2871,22 @@ async function adminResetProfPass() {
 
   setBtnLoading('btnResetProfPass', true);
   try {
-    // Gera nova senha temporária
     const chars    = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     const tempPass = 'Fit@' + Array.from({length:6}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
 
-    // Chama a Edge Function change-student-password reaproveitando a lógica
-    // ou usa a Admin API via função dedicada
     const { data: { session } } = await supabaseClient.auth.getSession();
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/change-student-password`, {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/reset-professor-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`,
       },
-      body: JSON.stringify({ userId: profId, newPassword: tempPass, isAdmin: true }),
+      body: JSON.stringify({ profId, newPassword: tempPass }),
     });
 
     const json = await res.json();
     if (!res.ok) throw new Error(json.error ?? 'Erro ao resetar senha');
 
-    // Marca como primeiro acesso para forçar troca
-    await supabaseClient.from('profiles').update({ first_access: true }).eq('id', profId);
-
-    // Mostra resultado
     document.getElementById('rpActions').style.display = 'none';
     document.getElementById('rpResult').style.display  = 'block';
     document.getElementById('rpResultEmail').textContent = email || '(e-mail não disponível)';
@@ -2918,10 +2911,16 @@ function copiarCredenciaisReset() {
 
 async function adminToggleProf(profileId, activate) {
   try {
-    await dbToggleProfessorActive(profileId, activate);
+    const { error } = await supabaseClient
+      .from('profiles')
+      .update({ active: activate })
+      .eq('id', profileId);
+
+    if (error) throw error;
+
     const p = PROFESSORES.find(x => x.id === profileId);
     if (p) p.active = activate;
-    showToast(activate ? 'Professor reativado!' : 'Professor desativado', 'sucesso');
+    showToast(activate ? 'Professor reativado!' : 'Professor desativado!', 'sucesso');
     rAdminProfessores();
   } catch(e) {
     showToast('Erro: ' + e.message, 'erro');
