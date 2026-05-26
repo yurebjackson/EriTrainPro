@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>FitTrack Pro</title>
+<title>EriTrain Pro</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase.js"></script>
@@ -11,7 +11,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter','Segoe UI',sans-serif;background:#F5F5F3;min-height:100vh;color:#1C1C1A}
 :root{
-  --brand:#1D9E75;--brand-d:#0F6E56;--brand-l:#E1F5EE;
+  --brand:#1A6FD4;--brand-d:#1255A8;--brand-l:#E6F0FC;
   --acc:#378ADD;--acc-l:#E6F1FB;
   --color-background-primary:#FFFFFF;
   --color-background-secondary:#F5F5F3;
@@ -26,7 +26,7 @@ body{font-family:'Inter','Segoe UI',sans-serif;background:#F5F5F3;min-height:100
   --font-sans:'Inter','Segoe UI',sans-serif;
 }
 [data-theme="dark"]{
-  --brand:#22C58B;--brand-d:#1aA070;--brand-l:#0D2E22;
+  --brand:#3B82F6;--brand-d:#1A6FD4;--brand-l:#0D1F3C;
   --acc:#5BA3E8;--acc-l:#0E2035;
   --color-background-primary:#1A1A18;
   --color-background-secondary:#242422;
@@ -330,7 +330,7 @@ body{transition:background .2s,color .2s}
   <div class="lc">
     <div class="ll">
       <div class="li"><i class="ti ti-barbell" aria-hidden="true"></i></div>
-      <span>FitTrack Pro</span>
+      <span>EriTrain Pro</span>
     </div>
     <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:1.5rem">Plataforma completa de treinos personalizados</p>
 
@@ -528,7 +528,7 @@ body{transition:background .2s,color .2s}
     <div class="tl">
       <button class="ham" onclick="toggleSidebar()" aria-label="Menu"><i class="ti ti-menu-2"></i></button>
       <div class="tli"><i class="ti ti-barbell" aria-hidden="true"></i></div>
-      FitTrack Pro
+      EriTrain Pro
       <span class="rb" id="NB"></span>
     </div>
     <div class="tr">
@@ -931,7 +931,7 @@ let planDayCount = 0;
 
 function muscleColor(muscle) {
   const map = {
-    'Peito':    '#E1F5EE', 'Costas':   '#E6F1FB', 'Pernas':   '#FAEEDA',
+    'Peito':    '#E6F0FC', 'Costas':   '#E6F1FB', 'Pernas':   '#FAEEDA',
     'Ombros':   '#FBEAF0', 'Bíceps':   '#EAF3DE', 'Tríceps':  '#EEEDFE',
     'Core':     '#FAECE7', 'Glúteos':  '#FDE9F4', 'Cardio':   '#E8F4FD',
   };
@@ -940,7 +940,7 @@ function muscleColor(muscle) {
 
 function muscleColorDark(muscle) {
   const map = {
-    'Peito':    '#0F6E56', 'Costas':   '#185FA5', 'Pernas':   '#633806',
+    'Peito':    '#1255A8', 'Costas':   '#185FA5', 'Pernas':   '#633806',
     'Ombros':   '#72243E', 'Bíceps':   '#27500A', 'Tríceps':  '#3C3489',
     'Core':     '#993C1D', 'Glúteos':  '#8B1A5E', 'Cardio':   '#0C5A8A',
   };
@@ -2191,19 +2191,19 @@ function saveWorkoutState() {
     trainStartTime,
     completedEx,
   };
-  try { localStorage.setItem('fittrack_workout', JSON.stringify(state)); } catch(_) {}
+  try { localStorage.setItem('eritrain_workout', JSON.stringify(state)); } catch(_) {}
 }
 
 function loadWorkoutState() {
   try {
-    const raw = localStorage.getItem('fittrack_workout');
+    const raw = localStorage.getItem('eritrain_workout');
     if (!raw) return;
     const state = JSON.parse(raw);
     // Só restaura se foi hoje
     if (!state.trainStartTime) return;
     const savedDate = new Date(state.trainStartTime).toDateString();
     if (savedDate !== new Date().toDateString()) {
-      localStorage.removeItem('fittrack_workout');
+      localStorage.removeItem('eritrain_workout');
       return;
     }
     trainDayIndex  = state.trainDayIndex;
@@ -2650,7 +2650,7 @@ async function rAdminDashboard() {
 
   document.getElementById('MC').innerHTML = `
     <p class="pt">Painel Admin</p>
-    <p class="ps">Visão geral da plataforma FitTrack Pro.</p>
+    <p class="ps">Visão geral da plataforma EriTrain Pro.</p>
 
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:1.5rem">
       <div class="cd" style="text-align:center">
@@ -2761,7 +2761,7 @@ async function adminCreateProfessor() {
 function copiarCredenciais() {
   const email = document.getElementById('npResultEmail').textContent;
   const pass  = document.getElementById('npResultPass').textContent;
-  const texto = `FitTrack Pro — Credenciais de acesso\nE-mail: ${email}\nSenha temporária: ${pass}\nAcesse: https://yurebjackson.github.io/FitTrackPro/`;
+  const texto = `EriTrain Pro — Credenciais de acesso\nE-mail: ${email}\nSenha temporária: ${pass}\nAcesse: https://yurebjackson.github.io/EriTrainPro/`;
   navigator.clipboard.writeText(texto)
     .then(() => showToast('Credenciais copiadas!', 'sucesso'))
     .catch(() => showToast('Não foi possível copiar. Copie manualmente.', 'aviso'));
@@ -2903,7 +2903,7 @@ async function adminResetProfPass() {
 function copiarCredenciaisReset() {
   const email = document.getElementById('rpResultEmail').textContent;
   const pass  = document.getElementById('rpResultPass').textContent;
-  const texto = `FitTrack Pro — Novas credenciais de acesso\nE-mail: ${email}\nSenha temporária: ${pass}\nAcesse: https://yurebjackson.github.io/FitTrackPro/`;
+  const texto = `EriTrain Pro — Novas credenciais de acesso\nE-mail: ${email}\nSenha temporária: ${pass}\nAcesse: https://yurebjackson.github.io/EriTrainPro/`;
   navigator.clipboard.writeText(texto)
     .then(() => showToast('Credenciais copiadas!', 'sucesso'))
     .catch(() => showToast('Não foi possível copiar. Copie manualmente.', 'aviso'));
@@ -3021,7 +3021,7 @@ async function concluirAgendamento(id) {
 function statusBadge(status) {
   const map = {
     'pendente':  { color:'#E8A020', bg:'#FEF3DC', label:'Pendente' },
-    'concluída': { color:'#1D9E75', bg:'#E1F5EE', label:'Concluída' },
+    'concluída': { color:'#1A6FD4', bg:'#E6F0FC', label:'Concluída' },
     'cancelada': { color:'#CC3333', bg:'#FDEAEA', label:'Cancelada' },
   };
   const s = map[status] ?? map['pendente'];
@@ -3397,12 +3397,12 @@ function toggleTheme() {
   const next = dark ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   document.getElementById('themeIcon').className = next === 'dark' ? 'ti ti-sun' : 'ti ti-moon';
-  try { localStorage.setItem('fittrack_theme', next); } catch(_) {}
+  try { localStorage.setItem('eritrain_theme', next); } catch(_) {}
 }
 
 function initTheme() {
   try {
-    const saved = localStorage.getItem('fittrack_theme') ?? 'light';
+    const saved = localStorage.getItem('eritrain_theme') ?? 'light';
     if (saved === 'dark') {
       document.documentElement.setAttribute('data-theme', 'dark');
       const icon = document.getElementById('themeIcon');
@@ -3692,7 +3692,7 @@ function renderWeightChart(avs) {
 
   // Legenda
   const legend = [
-    wLine ? `<circle cx="${PL}" cy="${PT - 10}" r="4" fill="#1D9E75"/>
+    wLine ? `<circle cx="${PL}" cy="${PT - 10}" r="4" fill="#1A6FD4"/>
       <text x="${PL + 8}" y="${PT - 7}" font-size="10" fill="var(--color-text-secondary)" font-family="Inter,sans-serif">Peso (kg)</text>` : '',
     fLine ? `<line x1="${PL + 76}" y1="${PT - 10}" x2="${PL + 92}" y2="${PT - 10}" stroke="#D95F2B" stroke-width="2" stroke-dasharray="4,2"/>
       <circle cx="${PL + 84}" cy="${PT - 10}" r="3.5" fill="#D95F2B" stroke="var(--color-background-primary)" stroke-width="1.5"/>
@@ -3707,10 +3707,10 @@ function renderWeightChart(avs) {
       stroke="var(--color-border-secondary)" stroke-width="0.8"/>
 
     ${wLine ? `
-      ${polyline(wLine.coords, '#1D9E75')}
-      ${dots(wLine.coords, '#1D9E75')}
-      ${valueLabels(wLine.coords, '#1D9E75', 'kg', 'top')}
-      ${yAxis(wLine, 'kg', '#1D9E75', 'left')}
+      ${polyline(wLine.coords, '#1A6FD4')}
+      ${dots(wLine.coords, '#1A6FD4')}
+      ${valueLabels(wLine.coords, '#1A6FD4', 'kg', 'top')}
+      ${yAxis(wLine, 'kg', '#1A6FD4', 'left')}
     ` : ''}
 
     ${fLine ? `
@@ -3772,11 +3772,11 @@ function exportAvaliacaoPDF(studentId, avId) {
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#1C1C1A;padding:2.5rem;max-width:720px;margin:auto}
-    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem;padding-bottom:1rem;border-bottom:2px solid #1D9E75}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem;padding-bottom:1rem;border-bottom:2px solid #1A6FD4}
     .header-left h1{font-size:20px;font-weight:700;margin-bottom:4px}
     .header-left p{font-size:12px;color:#6B6B69}
     .header-right{text-align:right;font-size:12px;color:#6B6B69}
-    .badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;background:#E1F5EE;color:#0F6E56;margin-bottom:1.5rem}
+    .badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;background:#E6F0FC;color:#1255A8;margin-bottom:1.5rem}
     .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.5rem}
     .cell{border:1px solid #E3E3E1;border-radius:8px;padding:10px 12px}
     .cell-label{font-size:10px;color:#6B6B69;margin-bottom:4px;text-transform:uppercase;letter-spacing:.4px}
@@ -3814,7 +3814,7 @@ function exportAvaliacaoPDF(studentId, avId) {
   ${av.notes || av.obs ? `<div class="notes">📝 ${av.notes || av.obs}</div>` : ''}
 
   <div class="footer">
-    <span>FitTrack Pro</span>
+    <span>EriTrain Pro</span>
     <span>Gerado em ${new Date().toLocaleDateString('pt-BR')}</span>
   </div>
 
