@@ -349,6 +349,90 @@ body{transition:background .2s,color .2s}
   </div>
 </div>
 
+<!-- ===== MODAL: EDITAR PROFESSOR (ADMIN) ===== -->
+<div class="mo" id="moEditProf">
+  <div class="mb" style="max-width:460px">
+    <div class="mh">
+      <span class="mt">Editar professor</span>
+      <button class="bcl" onclick="closeM('moEditProf')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="mbd">
+      <input type="hidden" id="epId"/>
+      <div class="fg">
+        <label class="fl">Nome completo</label>
+        <input class="fi" id="epEditName" placeholder="Nome do professor"/>
+      </div>
+      <div class="fg">
+        <label class="fl">Plano</label>
+        <select class="fsel" id="epEditPlan">
+          <option value="basic">Basic — até 10 alunos</option>
+          <option value="pro">Pro — até 30 alunos</option>
+          <option value="unlimited">Unlimited — ilimitado</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="bcn" onclick="closeM('moEditProf')">Cancelar</button>
+        <button class="bco" id="btnSaveEditProf" data-label="Salvar" onclick="adminSaveEditProf()">
+          <i class="ti ti-check"></i> Salvar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL: DETALHES DO PROFESSOR (ADMIN) ===== -->
+<div class="mo" id="moProfDetails">
+  <div class="mb" style="max-width:500px">
+    <div class="mh">
+      <span class="mt">Detalhes do professor</span>
+      <button class="bcl" onclick="closeM('moProfDetails')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="mbd" id="profDetailsBody"></div>
+  </div>
+</div>
+
+<!-- ===== MODAL: RESETAR SENHA DO PROFESSOR (ADMIN) ===== -->
+<div class="mo" id="moResetProfPass">
+  <div class="mb" style="max-width:420px">
+    <div class="mh">
+      <span class="mt">Resetar senha do professor</span>
+      <button class="bcl" onclick="closeM('moResetProfPass')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="mbd">
+      <input type="hidden" id="rpProfId"/>
+      <input type="hidden" id="rpProfEmail"/>
+      <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:1rem">
+        Uma nova senha temporária será gerada para <strong id="rpProfName"></strong>. 
+        Você deverá passar as novas credenciais para o professor.
+      </p>
+      <div id="rpResult" style="display:none">
+        <div style="background:var(--color-background-secondary);border-radius:10px;padding:16px;margin-bottom:1rem">
+          <div style="margin-bottom:10px">
+            <div style="font-size:10px;font-weight:600;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">E-mail</div>
+            <div style="font-size:14px;font-weight:600;color:var(--color-text-primary)" id="rpResultEmail"></div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:600;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Nova senha temporária</div>
+            <div style="font-size:22px;font-weight:700;color:var(--brand);letter-spacing:3px;font-family:monospace" id="rpResultPass"></div>
+          </div>
+        </div>
+        <button class="bas" style="width:100%;margin-bottom:8px" onclick="copiarCredenciaisReset()">
+          <i class="ti ti-copy"></i> Copiar credenciais
+        </button>
+        <button class="bco" style="width:100%" onclick="closeM('moResetProfPass');document.getElementById('rpResult').style.display='none'">
+          <i class="ti ti-check"></i> Fechar
+        </button>
+      </div>
+      <div id="rpActions" style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="bcn" onclick="closeM('moResetProfPass')">Cancelar</button>
+        <button class="bco" id="btnResetProfPass" data-label="Gerar nova senha" onclick="adminResetProfPass()">
+          <i class="ti ti-key"></i> Gerar nova senha
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ===== MODAL: CRIAR PROFESSOR (ADMIN) ===== -->
 <div class="mo" id="moNewProf">
   <div class="mb" style="max-width:460px">
@@ -2614,24 +2698,37 @@ async function rAdminProfessores() {
 }
 
 function _profRow(p, showActions = false) {
-  const ativo    = p.active !== false;
+  const ativo     = p.active !== false;
   const planLabel = { basic:'Basic', pro:'Pro', unlimited:'Unlimited' }[p.plan_type] ?? p.plan_type ?? '—';
-  return `<div style="display:flex;align-items:center;gap:12px;padding:12px 0;
+  const cadastro  = p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : '—';
+
+  return `<div style="display:flex;align-items:center;gap:12px;padding:14px 0;
                       border-bottom:0.5px solid var(--color-border-tertiary)">
-    ${avatarHTML(p.name, p.avatar_url, 36, 't2')}
+    ${avatarHTML(p.name, p.avatar_url, 40, 't2')}
     <div style="flex:1;min-width:0">
       <div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">${p.name}</div>
-      <div style="font-size:12px;color:var(--color-text-secondary)">${p.total ?? 0} alunos · Plano ${planLabel}</div>
+      <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px">
+        ${p.total ?? 0} alunos (${p.ativos ?? 0} ativos) · Plano ${planLabel} · Desde ${cadastro}
+      </div>
     </div>
-    <span style="font-size:11px;font-weight:600;padding:2px 10px;border-radius:20px;
+    <span style="font-size:11px;font-weight:600;padding:2px 10px;border-radius:20px;flex-shrink:0;
       background:${ativo ? 'var(--brand-l)' : 'var(--color-background-tertiary)'};
       color:${ativo ? 'var(--brand-d)' : 'var(--color-text-tertiary)'}">
       ${ativo ? 'Ativo' : 'Inativo'}
     </span>
-    ${showActions ? `<button class="${ativo ? 'bda' : 'bas'}" style="font-size:11px;padding:3px 10px"
-      onclick="adminToggleProf('${p.id}', ${!ativo})">
-      ${ativo ? 'Desativar' : 'Reativar'}
-    </button>` : ''}
+    ${showActions ? `
+    <div style="display:flex;gap:6px;flex-shrink:0">
+      <button class="bas" style="font-size:11px;padding:3px 8px" title="Detalhes"
+        onclick="adminOpenDetails('${p.id}')"><i class="ti ti-eye"></i></button>
+      <button class="bas" style="font-size:11px;padding:3px 8px" title="Editar"
+        onclick="adminOpenEditProf('${p.id}')"><i class="ti ti-edit"></i></button>
+      <button class="bas" style="font-size:11px;padding:3px 8px" title="Resetar senha"
+        onclick="adminOpenResetPass('${p.id}')"><i class="ti ti-key"></i></button>
+      <button class="${ativo ? 'bda' : 'bas'}" style="font-size:11px;padding:3px 10px"
+        onclick="adminToggleProf('${p.id}', ${!ativo})">
+        ${ativo ? 'Desativar' : 'Reativar'}
+      </button>
+    </div>` : ''}
   </div>`;
 }
 
@@ -2679,6 +2776,144 @@ function fecharNpResult() {
     document.getElementById('npName').value  = '';
     document.getElementById('npEmail').value = '';
   }, 300);
+}
+
+// Detalhes do professor
+function adminOpenDetails(profId) {
+  const p = PROFESSORES.find(x => x.id === profId);
+  if (!p) return;
+
+  const ativo     = p.active !== false;
+  const planLabel = { basic:'Basic', pro:'Pro', unlimited:'Unlimited' }[p.plan_type] ?? '—';
+  const cadastro  = p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' }) : '—';
+
+  document.getElementById('profDetailsBody').innerHTML = `
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:1.5rem">
+      ${avatarHTML(p.name, p.avatar_url, 56, 't2')}
+      <div>
+        <div style="font-size:18px;font-weight:700;color:var(--color-text-primary)">${p.name}</div>
+        <div style="font-size:13px;color:var(--color-text-secondary);margin-top:2px">${p.specialty || 'Professor'}</div>
+        <span style="font-size:11px;font-weight:600;padding:2px 10px;border-radius:20px;margin-top:6px;display:inline-block;
+          background:${ativo ? 'var(--brand-l)' : 'var(--color-background-tertiary)'};
+          color:${ativo ? 'var(--brand-d)' : 'var(--color-text-tertiary)'}">${ativo ? 'Ativo' : 'Inativo'}</span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem">
+      <div class="sc"><div class="sl">Plano</div><div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">${planLabel}</div></div>
+      <div class="sc"><div class="sl">Alunos totais</div><div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">${p.total ?? 0}</div></div>
+      <div class="sc"><div class="sl">Alunos ativos</div><div style="font-size:14px;font-weight:600;color:var(--brand)">${p.ativos ?? 0}</div></div>
+      <div class="sc"><div class="sl">Cadastrado em</div><div style="font-size:13px;font-weight:600;color:var(--color-text-primary)">${cadastro}</div></div>
+      ${p.cref ? `<div class="sc"><div class="sl">CREF</div><div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">${p.cref}</div></div>` : ''}
+      ${p.phone ? `<div class="sc"><div class="sl">Telefone</div><div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">${p.phone}</div></div>` : ''}
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="bas" style="flex:1" onclick="closeM('moProfDetails');adminOpenEditProf('${p.id}')">
+        <i class="ti ti-edit"></i> Editar
+      </button>
+      <button class="bas" style="flex:1" onclick="closeM('moProfDetails');adminOpenResetPass('${p.id}')">
+        <i class="ti ti-key"></i> Resetar senha
+      </button>
+      <button class="${ativo ? 'bda' : 'bco'}" style="flex:1" onclick="closeM('moProfDetails');adminToggleProf('${p.id}', ${!ativo})">
+        ${ativo ? 'Desativar' : 'Reativar'}
+      </button>
+    </div>`;
+
+  openM('moProfDetails');
+}
+
+// Editar professor
+function adminOpenEditProf(profId) {
+  const p = PROFESSORES.find(x => x.id === profId);
+  if (!p) return;
+  document.getElementById('epId').value           = profId;
+  document.getElementById('epEditName').value     = p.name;
+  document.getElementById('epEditPlan').value     = p.plan_type ?? 'basic';
+  openM('moEditProf');
+}
+
+async function adminSaveEditProf() {
+  const profId = document.getElementById('epId').value;
+  const name   = document.getElementById('epEditName').value.trim();
+  const plan   = document.getElementById('epEditPlan').value;
+
+  if (!name) { showToast('Informe o nome', 'aviso'); return; }
+
+  setBtnLoading('btnSaveEditProf', true);
+  try {
+    await supabaseClient.from('profiles').update({ name, plan_type: plan }).eq('id', profId);
+    const p = PROFESSORES.find(x => x.id === profId);
+    if (p) { p.name = name; p.plan_type = plan; }
+    closeM('moEditProf');
+    showToast('Professor atualizado!', 'sucesso');
+    rAdminProfessores();
+  } catch(e) {
+    showToast('Erro: ' + e.message, 'erro');
+  } finally {
+    setBtnLoading('btnSaveEditProf', false);
+  }
+}
+
+// Resetar senha do professor
+function adminOpenResetPass(profId) {
+  const p = PROFESSORES.find(x => x.id === profId);
+  if (!p) return;
+  document.getElementById('rpProfId').value        = profId;
+  document.getElementById('rpProfEmail').value     = p.email ?? '';
+  document.getElementById('rpProfName').textContent = p.name;
+  document.getElementById('rpResult').style.display  = 'none';
+  document.getElementById('rpActions').style.display = 'flex';
+  openM('moResetProfPass');
+}
+
+async function adminResetProfPass() {
+  const profId = document.getElementById('rpProfId').value;
+  const email  = document.getElementById('rpProfEmail').value;
+
+  setBtnLoading('btnResetProfPass', true);
+  try {
+    // Gera nova senha temporária
+    const chars    = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const tempPass = 'Fit@' + Array.from({length:6}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+
+    // Chama a Edge Function change-student-password reaproveitando a lógica
+    // ou usa a Admin API via função dedicada
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/change-student-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ userId: profId, newPassword: tempPass, isAdmin: true }),
+    });
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error ?? 'Erro ao resetar senha');
+
+    // Marca como primeiro acesso para forçar troca
+    await supabaseClient.from('profiles').update({ first_access: true }).eq('id', profId);
+
+    // Mostra resultado
+    document.getElementById('rpActions').style.display = 'none';
+    document.getElementById('rpResult').style.display  = 'block';
+    document.getElementById('rpResultEmail').textContent = email || '(e-mail não disponível)';
+    document.getElementById('rpResultPass').textContent  = tempPass;
+
+    showToast('Senha resetada com sucesso!', 'sucesso');
+  } catch(e) {
+    showToast('Erro: ' + e.message, 'erro');
+  } finally {
+    setBtnLoading('btnResetProfPass', false);
+  }
+}
+
+function copiarCredenciaisReset() {
+  const email = document.getElementById('rpResultEmail').textContent;
+  const pass  = document.getElementById('rpResultPass').textContent;
+  const texto = `FitTrack Pro — Novas credenciais de acesso\nE-mail: ${email}\nSenha temporária: ${pass}\nAcesse: https://yurebjackson.github.io/FitTrackPro/`;
+  navigator.clipboard.writeText(texto)
+    .then(() => showToast('Credenciais copiadas!', 'sucesso'))
+    .catch(() => showToast('Não foi possível copiar. Copie manualmente.', 'aviso'));
 }
 
 async function adminToggleProf(profileId, activate) {
