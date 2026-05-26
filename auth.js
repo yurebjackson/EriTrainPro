@@ -1,5 +1,5 @@
 // ============================================================
-// FitTrack Pro — Auth Layer (Supabase)
+// EriTrain Pro — Auth Layer (Supabase)
 // ============================================================
 
 let CURRENT_USER    = null;   // objeto auth.user
