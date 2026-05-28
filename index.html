@@ -362,7 +362,14 @@ body{transition:background .2s,color .2s}
         <label class="fl">Nome completo</label>
         <input class="fi" id="epEditName" placeholder="Nome do professor"/>
       </div>
-
+      <div class="fg">
+        <label class="fl">Plano</label>
+        <select class="fsel" id="epEditPlan">
+          <option value="basic">Basic — até 10 alunos</option>
+          <option value="pro">Pro — até 30 alunos</option>
+          <option value="unlimited">Unlimited — ilimitado</option>
+        </select>
+      </div>
       <div style="display:flex;gap:8px;justify-content:flex-end">
         <button class="bcn" onclick="closeM('moEditProf')">Cancelar</button>
         <button class="bco" id="btnSaveEditProf" data-label="Salvar" onclick="adminSaveEditProf()">
@@ -444,7 +451,14 @@ body{transition:background .2s,color .2s}
           <label class="fl">E-mail</label>
           <input class="fi" id="npEmail" type="email" placeholder="professor@email.com"/>
         </div>
-
+        <div class="fg">
+          <label class="fl">Plano</label>
+          <select class="fsel" id="npPlan">
+            <option value="basic">Basic — até 10 alunos</option>
+            <option value="pro">Pro — até 30 alunos</option>
+            <option value="unlimited">Unlimited — ilimitado</option>
+          </select>
+        </div>
         <div style="background:var(--brand-l);border-radius:8px;padding:12px;margin-bottom:1rem;font-size:12px;color:var(--brand-d)">
           <i class="ti ti-mail"></i> Uma senha temporária será gerada. Passe as credenciais para o professor.
         </div>
@@ -1024,7 +1038,9 @@ function buildSidebar() {
       <div class="si" data-p="historico-prof"  onclick="nav('historico-prof')"><i class="ti ti-history"></i>Histórico geral</div>
       <div class="ss">Conteúdo</div>
       <div class="si" data-p="exercicios"      onclick="nav('exercicios')"><i class="ti ti-barbell"></i>Exercícios</div>
-      <div class="si" data-p="planos"          onclick="nav('planos')"><i class="ti ti-clipboard-list"></i>Planos de treino</div>`;
+      <div class="si" data-p="planos"          onclick="nav('planos')"><i class="ti ti-clipboard-list"></i>Planos de treino</div>
+      <div class="ss">Conta</div>
+      <div class="si" data-p="minha-assinatura" onclick="nav('minha-assinatura')"><i class="ti ti-credit-card"></i>Minha assinatura</div>\`;
 
     // Bottom nav mobile — 5 itens principais do professor
     _buildBottomNav([
@@ -1088,6 +1104,7 @@ function nav(page) {
     planos: rPlanos, avaliacoes: rAvaliacoes, 'historico-prof': rHistoricoProf,
     'meu-perfil': rMeuPerfil, agendamentos: rAgendamentos,
     'admin-dashboard': rAdminDashboard, 'admin-professores': rAdminProfessores,
+    'minha-assinatura': rMinhaAssinatura,
     'meu-treino': rMeuTreino,
     'minha-avaliacao': rMinhaAvaliacao, 'meu-historico': rMeuHistorico, progresso: rProgresso,
     'perfil-aluno': rPerfilAluno, 'meus-agendamentos': rMeusAgendamentos,
@@ -2685,7 +2702,7 @@ async function rAdminProfessores() {
 
 function _profRow(p, showActions = false) {
   const ativo     = p.active !== false;
-
+  const planLabel = { basic:'Basic', pro:'Pro', unlimited:'Unlimited' }[p.plan_type] ?? p.plan_type ?? '—';
   const cadastro  = p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : '—';
 
   return `<div style="display:flex;align-items:center;gap:12px;padding:14px 0;
@@ -2694,7 +2711,7 @@ function _profRow(p, showActions = false) {
     <div style="flex:1;min-width:0">
       <div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">${p.name}</div>
       <div style="font-size:12px;color:var(--color-text-secondary);margin-top:2px">
-        ${p.total ?? 0} alunos (${p.ativos ?? 0} ativos) · Desde ${cadastro}
+        ${p.total ?? 0} alunos (${p.ativos ?? 0} ativos) · Plano ${planLabel} · Desde ${cadastro}
       </div>
     </div>
     <span style="font-size:11px;font-weight:600;padding:2px 10px;border-radius:20px;flex-shrink:0;
@@ -2710,6 +2727,8 @@ function _profRow(p, showActions = false) {
         onclick="adminOpenEditProf('${p.id}')"><i class="ti ti-edit"></i></button>
       <button class="bas" style="font-size:11px;padding:3px 8px" title="Resetar senha"
         onclick="adminOpenResetPass('${p.id}')"><i class="ti ti-key"></i></button>
+      <button class="bas" style="font-size:11px;padding:3px 8px" title="Criar/reenviar link de assinatura"
+        onclick="adminCreateSubscription('${p.id}')"><i class="ti ti-credit-card"></i></button>
       <button class="${ativo ? 'bda' : 'bas'}" style="font-size:11px;padding:3px 10px"
         onclick="adminToggleProf('${p.id}', ${!ativo})">
         ${ativo ? 'Desativar' : 'Reativar'}
@@ -2721,11 +2740,13 @@ function _profRow(p, showActions = false) {
 async function adminCreateProfessor() {
   const name  = document.getElementById('npName').value.trim();
   const email = document.getElementById('npEmail').value.trim();
+  const plan  = document.getElementById('npPlan').value;
+
   if (!name || !email) { showToast('Preencha nome e e-mail', 'aviso'); return; }
 
   setBtnLoading('btnCreateProf', true);
   try {
-    const result = await dbCreateProfessorViaFunction(name, email, 'pro');
+    const result = await dbCreateProfessorViaFunction(name, email, plan);
 
     // Mostra tela de resultado com credenciais
     document.getElementById('npForm').style.display   = 'none';
@@ -2783,21 +2804,24 @@ function adminOpenDetails(profId) {
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem">
-
+      <div class="sc"><div class="sl">Plano</div><div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">${planLabel}</div></div>
       <div class="sc"><div class="sl">Alunos totais</div><div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">${p.total ?? 0}</div></div>
       <div class="sc"><div class="sl">Alunos ativos</div><div style="font-size:14px;font-weight:600;color:var(--brand)">${p.ativos ?? 0}</div></div>
       <div class="sc"><div class="sl">Cadastrado em</div><div style="font-size:13px;font-weight:600;color:var(--color-text-primary)">${cadastro}</div></div>
       ${p.cref ? `<div class="sc"><div class="sl">CREF</div><div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">${p.cref}</div></div>` : ''}
       ${p.phone ? `<div class="sc"><div class="sl">Telefone</div><div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">${p.phone}</div></div>` : ''}
     </div>
-    <div style="display:flex;gap:8px">
-      <button class="bas" style="flex:1" onclick="closeM('moProfDetails');adminOpenEditProf('${p.id}')">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="bas" style="flex:1;min-width:100px" onclick="closeM('moProfDetails');adminOpenEditProf('${p.id}')">
         <i class="ti ti-edit"></i> Editar
       </button>
-      <button class="bas" style="flex:1" onclick="closeM('moProfDetails');adminOpenResetPass('${p.id}')">
+      <button class="bas" style="flex:1;min-width:100px" onclick="closeM('moProfDetails');adminOpenResetPass('${p.id}')">
         <i class="ti ti-key"></i> Resetar senha
       </button>
-      <button class="${ativo ? 'bda' : 'bco'}" style="flex:1" onclick="closeM('moProfDetails');adminToggleProf('${p.id}', ${!ativo})">
+      <button class="bas" style="flex:1;min-width:100px" onclick="closeM('moProfDetails');adminCreateSubscription('${p.id}')">
+        <i class="ti ti-credit-card"></i> Assinatura
+      </button>
+      <button class="${ativo ? 'bda' : 'bco'}" style="flex:1;min-width:100px" onclick="closeM('moProfDetails');adminToggleProf('${p.id}', ${!ativo})">
         ${ativo ? 'Desativar' : 'Reativar'}
       </button>
     </div>`;
@@ -2809,21 +2833,24 @@ function adminOpenDetails(profId) {
 function adminOpenEditProf(profId) {
   const p = PROFESSORES.find(x => x.id === profId);
   if (!p) return;
-  document.getElementById('epId').value       = profId;
-  document.getElementById('epEditName').value = p.name;
+  document.getElementById('epId').value           = profId;
+  document.getElementById('epEditName').value     = p.name;
+  document.getElementById('epEditPlan').value     = p.plan_type ?? 'basic';
   openM('moEditProf');
 }
 
 async function adminSaveEditProf() {
   const profId = document.getElementById('epId').value;
   const name   = document.getElementById('epEditName').value.trim();
+  const plan   = document.getElementById('epEditPlan').value;
+
   if (!name) { showToast('Informe o nome', 'aviso'); return; }
 
   setBtnLoading('btnSaveEditProf', true);
   try {
-    await supabaseClient.from('profiles').update({ name }).eq('id', profId);
+    await supabaseClient.from('profiles').update({ name, plan_type: plan }).eq('id', profId);
     const p = PROFESSORES.find(x => x.id === profId);
-    if (p) { p.name = name; }
+    if (p) { p.name = name; p.plan_type = plan; }
     closeM('moEditProf');
     showToast('Professor atualizado!', 'sucesso');
     rAdminProfessores();
@@ -2905,6 +2932,124 @@ async function adminToggleProf(profileId, activate) {
     rAdminProfessores();
   } catch(e) {
     showToast('Erro: ' + e.message, 'erro');
+  }
+}
+
+// ============================================================
+// ADMIN — ASSINATURAS
+// ============================================================
+
+async function adminCreateSubscription(profId) {
+  const p = PROFESSORES.find(x => x.id === profId);
+  if (!p) return;
+  if (!confirm(`Criar assinatura MP para ${p.name}?`)) return;
+
+  try {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/create-subscription`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ profId: p.id, profName: p.name, profEmail: p.email }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error ?? 'Erro ao criar assinatura');
+
+    if (json.alreadyActive) {
+      showToast('Professor já tem assinatura ativa!', 'sucesso');
+      return;
+    }
+    if (json.checkoutUrl) {
+      showToast('Assinatura criada! Link copiado.', 'sucesso');
+      navigator.clipboard.writeText(json.checkoutUrl).catch(() => {});
+      window.open(json.checkoutUrl, '_blank');
+    }
+    await loadProfessores();
+    rAdminProfessores();
+  } catch(e) {
+    showToast('Erro: ' + e.message, 'erro');
+  }
+}
+
+// ============================================================
+// PROFESSOR — MINHA ASSINATURA
+// ============================================================
+
+async function rMinhaAssinatura() {
+  document.getElementById('MC').innerHTML = `
+    <p class="pt">Minha Assinatura</p>
+    <p class="ps">Gerencie seu plano EriTrain Pro.</p>
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:3rem;color:var(--color-text-tertiary)">
+      <i class="ti ti-loader" style="font-size:24px"></i> Carregando...
+    </div>`;
+
+  try {
+    const sub = await dbGetMySubscription().catch(() => null);
+    const ps  = CURRENT_PROFILE?.payment_status ?? 'active';
+
+    const statusMap = {
+      active:    { label:'Ativo',              color:'#16A34A', bg:'#F0FDF4', border:'#86EFAC', icon:'ti-circle-check' },
+      authorized:{ label:'Ativo',              color:'#16A34A', bg:'#F0FDF4', border:'#86EFAC', icon:'ti-circle-check' },
+      pending:   { label:'Pendente',           color:'#D97706', bg:'#FFFBEB', border:'#FCD34D', icon:'ti-clock' },
+      past_due:  { label:'Falha no pagamento', color:'#EA580C', bg:'#FFF7ED', border:'#FDBA74', icon:'ti-alert-triangle' },
+      cancelled: { label:'Cancelado',          color:'#DC2626', bg:'#FEF2F2', border:'#FECACA', icon:'ti-x' },
+      paused:    { label:'Pausado',            color:'#EA580C', bg:'#FFF7ED', border:'#FDBA74', icon:'ti-player-pause' },
+    };
+
+    const mpStatus  = sub?.status ?? ps;
+    const stInfo    = statusMap[mpStatus] ?? statusMap['pending'];
+    const nextVenc  = sub?.next_payment_date ? new Date(sub.next_payment_date + 'T12:00:00').toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' }) : '—';
+    const lastPay   = sub?.last_payment_date ? new Date(sub.last_payment_date + 'T12:00:00').toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' }) : '—';
+    const initPoint = sub?.init_point ?? null;
+    const showPayBtn = (mpStatus === 'pending' || mpStatus === 'past_due' || mpStatus === 'paused') && initPoint;
+    const showReqBtn = mpStatus === 'cancelled' || !sub;
+
+    document.getElementById('MC').innerHTML = `
+      <p class="pt">Minha Assinatura</p>
+      <p class="ps">Gerencie seu plano EriTrain Pro.</p>
+      <div class="cd" style="margin-bottom:1rem">
+        <div style="display:flex;align-items:center;gap:16px;margin-bottom:1.5rem">
+          <div style="width:52px;height:52px;background:var(--brand-l);border-radius:12px;display:flex;align-items:center;justify-content:center">
+            <i class="ti ti-credit-card" style="font-size:26px;color:var(--brand)"></i>
+          </div>
+          <div>
+            <div style="font-size:17px;font-weight:700;color:var(--color-text-primary)">EriTrain Pro</div>
+            <div style="font-size:13px;color:var(--color-text-secondary)">R$ 30,00 / mês</div>
+          </div>
+          <div style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;background:${stInfo.bg};border:1px solid ${stInfo.border};color:${stInfo.color}">
+            <i class="ti ${stInfo.icon}"></i> ${stInfo.label}
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.5rem">
+          <div class="sc"><div class="sl">Próximo vencimento</div><div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">${nextVenc}</div></div>
+          <div class="sc"><div class="sl">Último pagamento</div><div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">${lastPay}</div></div>
+          <div class="sc"><div class="sl">Valor mensal</div><div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">R$ 30,00</div></div>
+          <div class="sc"><div class="sl">Plataforma</div><div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">Mercado Pago</div></div>
+        </div>
+        ${showPayBtn ? `<a href="${initPoint}" target="_blank" rel="noopener noreferrer"
+          style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;background:var(--brand);color:white;border-radius:var(--border-radius-md);font-size:14px;font-weight:600;text-decoration:none;margin-bottom:10px">
+          <i class="ti ti-credit-card"></i> ${mpStatus === 'pending' ? 'Ativar assinatura agora' : 'Regularizar pagamento'}
+        </a>` : ''}
+        ${showReqBtn ? `<div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:16px;text-align:center">
+          <i class="ti ti-info-circle" style="font-size:24px;color:var(--color-text-tertiary)"></i>
+          <p style="font-size:13px;color:var(--color-text-secondary);margin-top:8px">Você ainda não tem uma assinatura ativa. Entre em contato com o administrador.</p>
+        </div>` : ''}
+        ${mpStatus === 'active' || mpStatus === 'authorized' ? `<div style="background:#F0FDF4;border:1px solid #86EFAC;border-radius:var(--border-radius-md);padding:14px;display:flex;align-items:center;gap:10px">
+          <i class="ti ti-circle-check" style="font-size:20px;color:#16A34A"></i>
+          <div style="font-size:13px;color:#15803D">Sua assinatura está ativa. Próximo pagamento cobrado automaticamente.</div>
+        </div>` : ''}
+      </div>
+      <div class="cd">
+        <div class="ct" style="margin-bottom:1rem">Precisa de ajuda?</div>
+        <p style="font-size:13px;color:var(--color-text-secondary);line-height:1.6">
+          Para dúvidas sobre sua assinatura, entre em contato com o administrador.
+          Pagamentos são processados via <strong>Mercado Pago</strong> com cobrança automática mensal.
+        </p>
+      </div>`;
+  } catch(e) {
+    document.getElementById('MC').innerHTML = `<p class="pt">Minha Assinatura</p><p style="color:var(--color-text-secondary);font-size:13px">Erro: ${e.message}</p>`;
   }
 }
 
