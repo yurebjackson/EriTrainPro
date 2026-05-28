@@ -2809,9 +2809,8 @@ function adminOpenDetails(profId) {
 function adminOpenEditProf(profId) {
   const p = PROFESSORES.find(x => x.id === profId);
   if (!p) return;
-  document.getElementById('epId').value           = profId;
-  document.getElementById('epEditName').value     = p.name;
-  document.getElementById('epEditPlan').value     = p.plan_type ?? 'basic';
+  document.getElementById('epId').value       = profId;
+  document.getElementById('epEditName').value = p.name;
   openM('moEditProf');
 }
 
