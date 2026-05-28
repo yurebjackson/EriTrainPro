@@ -447,21 +447,42 @@ async function dbGetAllProfessores() {
     .order('created_at', { ascending: false });
   if (error) throw error;
 
-  // Busca e-mails via tabela de usuários (admin pode ver)
-  const ids = (data ?? []).map(p => p.id);
-  let emailMap = {};
-  if (ids.length) {
-    // Tenta buscar e-mails via auth.users — só funciona com service role
-    // Como não temos, buscamos da tabela students ou deixamos vazio
-    // Alternativa: salvar email em profiles no momento da criação
-    const { data: authData } = await supabaseClient
-      .from('profiles')
-      .select('id, email')
-      .in('id', ids);
-    (authData ?? []).forEach(u => { emailMap[u.id] = u.email; });
-  }
+  const profs = data ?? [];
+  if (!profs.length) return [];
 
-  return (data ?? []).map(p => ({ ...p, email: emailMap[p.id] ?? p.email ?? '' }));
+  // Busca assinaturas de todos os professores de uma vez
+  const ids = profs.map(p => p.id);
+  const { data: subs } = await supabaseClient
+    .from('subscriptions')
+    .select('professor_id, status, next_payment_date, last_payment_date, init_point, mp_subscription_id')
+    .in('professor_id', ids);
+
+  const subMap = {};
+  (subs ?? []).forEach(s => { subMap[s.professor_id] = s; });
+
+  return profs.map(p => ({
+    ...p,
+    email:            p.email ?? '',
+    // Dado de assinatura mesclado no objeto do professor
+    sub_status:       subMap[p.id]?.status ?? null,
+    sub_next_payment: subMap[p.id]?.next_payment_date ?? null,
+    sub_init_point:   subMap[p.id]?.init_point ?? null,
+    sub_mp_id:        subMap[p.id]?.mp_subscription_id ?? null,
+  }));
+}
+
+// Busca dados de assinatura do professor logado
+async function dbGetMySubscription() {
+  const user = await getCurrentUser();
+  const { data, error } = await supabaseClient
+    .from('subscriptions')
+    .select('*')
+    .eq('professor_id', user.id)
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
 }
 
 async function dbGetProfessorStats(professorId) {
