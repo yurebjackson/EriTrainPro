@@ -608,33 +608,17 @@ body{transition:background .2s,color .2s}
 
 <!-- ===== MODAL: ATRIBUIR TREINO ===== -->
 <div class="mo" id="moAssign">
-  <div class="mb" style="max-width:560px">
+  <div class="mb" style="max-width:480px">
     <div class="mh">
       <span class="mt" id="asTitle">Atribuir treino</span>
       <button class="bcl" onclick="closeM('moAssign')"><i class="ti ti-x"></i></button>
     </div>
     <div class="mbd">
-      <!-- Passo 1: escolha do plano -->
-      <div id="asStep1">
-        <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:1rem">Escolha um plano:</p>
-        <div id="plOpts"></div>
-        <div style="display:flex;gap:8px;margin-top:1rem;justify-content:flex-end">
-          <button class="bcn" onclick="closeM('moAssign')">Cancelar</button>
-          <button class="bco" onclick="asGoStep2()"><i class="ti ti-arrow-right"></i> Personalizar reps</button>
-        </div>
-      </div>
-      <!-- Passo 2: personalizar séries/reps por exercício -->
-      <div id="asStep2" style="display:none">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:1rem">
-          <button class="bcn" style="padding:5px 10px" onclick="asGoStep1()"><i class="ti ti-arrow-left"></i></button>
-          <span style="font-size:14px;font-weight:600;color:var(--color-text-primary)">Personalizar séries e repetições</span>
-        </div>
-        <p style="font-size:12px;color:var(--color-text-secondary);margin-bottom:1rem">Deixe em branco para usar o padrão do exercício.</p>
-        <div id="asCustomReps" style="max-height:360px;overflow-y:auto"></div>
-        <div style="display:flex;gap:8px;margin-top:1rem;justify-content:flex-end">
-          <button class="bcn" onclick="closeM('moAssign')">Cancelar</button>
-          <button class="bco" id="btnConfirmAssign" onclick="confirmAssign()"><i class="ti ti-check"></i> Atribuir treino</button>
-        </div>
+      <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:1rem">Escolha um plano:</p>
+      <div id="plOpts"></div>
+      <div style="display:flex;gap:8px;margin-top:1rem;justify-content:flex-end">
+        <button class="bcn" onclick="closeM('moAssign')">Cancelar</button>
+        <button class="bco" onclick="confirmAssign()">Atribuir</button>
       </div>
     </div>
   </div>
@@ -2078,9 +2062,6 @@ function openAssign(sid) {
     <div class="pd ${selPlan === p.id ? 'sel' : ''}" onclick="selPlanOpt('${p.id}',this)">
       <div class="pdn">${p.name}</div><div class="pdd">${p.desc}</div>
     </div>`).join('') || `<p style="font-size:13px;color:var(--color-text-secondary)">Nenhum plano criado. Crie um plano primeiro.</p>`;
-  // Reseta para passo 1
-  document.getElementById('asStep1').style.display = '';
-  document.getElementById('asStep2').style.display = 'none';
   openM('moAssign');
 }
 
@@ -2088,63 +2069,6 @@ function selPlanOpt(id, el) {
   selPlan = id;
   document.querySelectorAll('.pd').forEach(o => o.classList.remove('sel'));
   el.classList.add('sel');
-}
-
-function asGoStep1() {
-  document.getElementById('asStep1').style.display = '';
-  document.getElementById('asStep2').style.display = 'none';
-}
-
-async function asGoStep2() {
-  if (!selPlan) { showToast('Selecione um plano primeiro', 'aviso'); return; }
-  const plan = getPlanById(selPlan);
-  if (!plan) return;
-
-  // Carrega configs existentes
-  let existingConfigs = {};
-  try {
-    const rows = await dbGetStudentExerciseConfigs(assignTarget, selPlan);
-    rows.forEach(r => { existingConfigs[r.exercise_id] = r; });
-  } catch(_) {}
-
-  const html = plan.days.map(d => `
-    <div style="margin-bottom:1rem">
-      <div style="font-size:12px;font-weight:700;color:var(--brand);text-transform:uppercase;
-                  letter-spacing:.5px;padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary);
-                  margin-bottom:8px">${d.label}</div>
-      ${d.exercises.map(eid => {
-        const ex = getExerciseById(eid);
-        if (!ex) return '';
-        const cfg = existingConfigs[eid] ?? {};
-        return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;
-                            border-bottom:0.5px solid var(--color-border-tertiary)">
-          <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:600;color:var(--color-text-primary)">${ex.name}</div>
-            <div style="font-size:11px;color:var(--color-text-tertiary)">Padrão: ${ex.series} séries · ${ex.reps}</div>
-          </div>
-          <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
-            <div>
-              <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:2px">Séries</div>
-              <input class="fi as-series" data-exid="${eid}" type="text"
-                     value="${cfg.custom_series ?? ''}"
-                     placeholder="${ex.series}"
-                     style="width:52px;padding:5px 7px;font-size:12px;text-align:center"/>
-            </div>
-            <div>
-              <div style="font-size:10px;color:var(--color-text-tertiary);margin-bottom:2px">Reps</div>
-              <input class="fi as-reps" data-exid="${eid}" type="text"
-                     value="${cfg.custom_reps ?? ''}"
-                     placeholder="${ex.reps}"
-                     style="width:72px;padding:5px 7px;font-size:12px;text-align:center"/>
-            </div>
-          </div>
-        </div>`;
-      }).join('')}
-    </div>`).join('');
-
-  document.getElementById('asCustomReps').innerHTML = html;
-  document.getElementById('asStep1').style.display = 'none';
-  document.getElementById('asStep2').style.display = '';
 }
 
 // ============================================================
@@ -2163,28 +2087,8 @@ function openAvFor(sid) {
 // PÁGINAS — ALUNO
 // ============================================================
 function rMeuTreino() {
+  // Restaura estado salvo no localStorage (se vier de um refresh)
   loadWorkoutState();
-  // Carrega configs personalizadas de séries/reps
-  const student = STUDENTS.find(s => s.id === curUser.sid);
-  const planId  = student?.plan_id || student?.plan;
-  if (planId && curUser.sid) {
-    dbGetStudentExerciseConfigs(curUser.sid, planId).then(rows => {
-      window._studentExConfigs = {};
-      rows.forEach(r => { window._studentExConfigs[r.exercise_id] = r; });
-      // Re-renderiza só as linhas de exercício sem resetar estado
-      document.querySelectorAll('.pxs').forEach(el => {
-        const perEl  = el.closest('.per');
-        if (!perEl) return;
-        const key    = perEl.id?.replace('per-', '');
-        if (!key) return;
-        const eid    = key.split('-').slice(1).join('-');
-        const ex     = getExerciseById(eid);
-        if (!ex) return;
-        const cfg    = window._studentExConfigs[eid] ?? {};
-        el.textContent = `${cfg.custom_series||ex.series} séries · ${cfg.custom_reps||ex.reps} · descanso ${ex.rest}`;
-      });
-    }).catch(() => {});
-  }
   const mc = document.getElementById('MC');
   const student = STUDENTS.find(s => s.id === curUser.sid);
   const planId = student?.plan_id || student?.plan;
@@ -2228,35 +2132,15 @@ function rMeuTreino() {
           </div>
           ${d.exercises.map(eid => {
             const ex = getExerciseById(eid); if (!ex) return '';
-            const key  = `${di}-${eid}`;
-            const done = completedEx[key];
-            const kg   = STUDENT_LOADS[eid] ?? '';
-            // Usa config personalizada se existir
-            const cfg  = (window._studentExConfigs ?? {})[eid] ?? {};
-            const series = cfg.custom_series || ex.series;
-            const reps   = cfg.custom_reps   || ex.reps;
-            // Parse segundos de descanso
-            const restSec = parseInt((ex.rest ?? '60').replace(/[^0-9]/g,'')) || 60;
-            return `<div class="per" id="per-${key}">
-              <div class="dc ${done ? 'dn' : ''}" id="dc-${key}" onclick="toggleDone('${key}',this,'${curUser.sid}',${di},'${d.label.replace(/'/g,"\\'")}','${ex.name.replace(/'/g,"\\'")}',${restSec})">
+            const key = `${di}-${eid}`; const done = completedEx[key];
+            return `<div class="per">
+              <div class="dc ${done ? 'dn' : ''}" id="dc-${key}" onclick="toggleDone('${key}',this,'${curUser.sid}',${di},'${d.label.replace(/'/g,"\\'")}','${ex.name.replace(/'/g,"\\'")}')">
                 ${done ? '✓' : ''}
               </div>
               <div class="pxi" style="background:${muscleColor(ex.muscle)};border-radius:var(--border-radius-md)"><span style="font-size:12px;font-weight:700;color:${muscleColorDark(ex.muscle)}">${(ex.muscle||'?')[0]}</span></div>
               <div class="pxif">
                 <div class="pxn">${ex.name}</div>
-                <div class="pxs">${series} séries · ${reps} · descanso ${ex.rest}</div>
-                <div style="display:flex;align-items:center;gap:6px;margin-top:5px">
-                  <span style="font-size:11px;color:var(--color-text-tertiary)">Carga:</span>
-                  <input type="number" min="0" step="0.5"
-                    value="${kg}"
-                    placeholder="0"
-                    id="kg-${key}"
-                    onchange="saveLoad('${eid}', parseFloat(this.value)||0)"
-                    style="width:58px;padding:3px 6px;font-size:12px;border:0.5px solid var(--color-border-secondary);
-                           border-radius:var(--border-radius-sm);background:var(--color-background-secondary);
-                           color:var(--color-text-primary);font-family:var(--font-sans);text-align:center"/>
-                  <span style="font-size:11px;color:var(--color-text-tertiary)">kg</span>
-                </div>
+                <div class="pxs">${ex.series} séries · ${ex.reps} · descanso ${ex.rest}</div>
               </div>
               <button class="bw" onclick="openEx('${ex.id}')"><i class="ti ti-player-play"></i> ${ex.yt ? 'Ver vídeo' : 'Ver'}</button>
             </div>`;
@@ -2286,7 +2170,7 @@ function toggleDay(di) {
   document.getElementById('day-' + di)?.classList.toggle('op', openDays[di]);
 }
 
-async function toggleDone(key, el, sid, di, dayLabel, exName, restSec = 60) {
+async function toggleDone(key, el, sid, di, dayLabel, exName) {
   // Só permite marcar se o treino foi iniciado
   if (trainDayIndex !== di) {
     showToast('Inicie o treino primeiro!', 'aviso');
@@ -2297,36 +2181,8 @@ async function toggleDone(key, el, sid, di, dayLabel, exName, restSec = 60) {
   el.innerHTML = completedEx[key] ? '✓' : '';
   const dt = document.getElementById('doneToday');
   if (dt) dt.textContent = Object.values(completedEx).filter(Boolean).length;
+  // Persiste marcações no localStorage
   saveWorkoutState();
-
-  // Inicia temporizador de descanso ao marcar como feito
-  if (completedEx[key] && restSec > 0) {
-    const perEl = document.getElementById('per-' + key);
-    if (perEl) {
-      // Remove timer anterior se existir
-      perEl.querySelector('.rest-timer-wrap')?.remove();
-      const timerWrap = document.createElement('div');
-      timerWrap.className = 'rest-timer-wrap';
-      timerWrap.style.cssText = `display:flex;align-items:center;gap:10px;margin-top:8px;
-        padding:8px 12px;background:var(--brand-l);border-radius:var(--border-radius-md);
-        font-size:13px;color:var(--brand-d);font-weight:600;width:100%`;
-      timerWrap.innerHTML = `
-        <i class="ti ti-clock" style="font-size:16px;flex-shrink:0"></i>
-        <span>Descansando:</span>
-        <span class="rest-display" style="font-size:16px;font-weight:700;min-width:42px">--:--</span>
-        <button onclick="this.closest('.rest-timer-wrap').remove();clearInterval(restTimer);restTimer=null"
-          style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--brand-d);font-size:13px">
-          <i class="ti ti-x"></i> Pular
-        </button>`;
-      // Insere após a div pxif
-      perEl.appendChild(timerWrap);
-      startRestTimer(restSec, timerWrap.querySelector('.rest-display'));
-    }
-  } else if (!completedEx[key]) {
-    // Desmarcou — remove timer
-    document.getElementById('per-' + key)?.querySelector('.rest-timer-wrap')?.remove();
-    if (restTimer) { clearInterval(restTimer); restTimer = null; }
-  }
 }
 
 // ============================================================
@@ -3082,105 +2938,6 @@ async function adminToggleProf(profileId, activate) {
 // ============================================================
 // ADMIN — ASSINATURAS
 // ============================================================
-
-// ============================================================
-// CONFIRM ASSIGN — sobrescreve students.js (salva configs)
-// ============================================================
-async function confirmAssign() {
-  if (!selPlan || !assignTarget) return;
-  setBtnLoading('btnConfirmAssign', true);
-
-  try {
-    await dbAssignPlan(assignTarget, selPlan);
-
-    const s    = STUDENTS.find(st => st.id === assignTarget);
-    const plan = PLANS.find(p => p.id === selPlan);
-
-    if (s) {
-      s.plan = selPlan;
-      await resetStudentProgress(assignTarget);
-
-      // Salva configs personalizadas de séries/reps
-      const seriesInputs = document.querySelectorAll('.as-series');
-      const repsInputs   = document.querySelectorAll('.as-reps');
-      const saves = [];
-      seriesInputs.forEach(inp => {
-        const eid  = inp.dataset.exid;
-        const repsEl = document.querySelector(`.as-reps[data-exid="${eid}"]`);
-        const cs   = inp.value.trim();
-        const cr   = repsEl?.value.trim() ?? '';
-        if (cs || cr) {
-          saves.push(dbSaveStudentExerciseConfig(assignTarget, eid, selPlan, cs || null, cr || null));
-        }
-      });
-      if (saves.length) await Promise.allSettled(saves);
-
-      // Notifica o aluno
-      if (s.user_id) {
-        const planName = plan?.name ?? 'Novo treino';
-        await dbCreateNotification(
-          s.user_id,
-          '🏋️ Novo treino atribuído!',
-          `Seu professor atribuiu o plano "${planName}". Acesse "Meu Treino" para começar.`
-        ).catch(e => console.warn('notif:', e.message));
-      }
-    }
-
-    closeM('moAssign');
-    showToast('Treino atribuído!');
-    nav('alunos');
-  } catch (err) {
-    showToast('Erro: ' + err.message, 'erro');
-  } finally {
-    setBtnLoading('btnConfirmAssign', false);
-  }
-}
-
-// ============================================================
-// ESTADO DE CARGAS DO ALUNO (kg por exercício)
-// ============================================================
-let STUDENT_LOADS = {}; // { exercise_id: kg }
-let restTimer     = null;
-let restTimerEl   = null;
-
-async function loadStudentLoads() {
-  if (!curUser?.sid) return;
-  try {
-    STUDENT_LOADS = await dbGetStudentLoads(curUser.sid);
-  } catch(_) {}
-}
-
-async function saveLoad(exerciseId, kg) {
-  try {
-    STUDENT_LOADS[exerciseId] = kg;
-    await dbSaveStudentLoad(curUser.sid, exerciseId, kg);
-  } catch(e) {
-    console.warn('saveLoad:', e.message);
-  }
-}
-
-function startRestTimer(seconds, displayEl) {
-  if (restTimer) clearInterval(restTimer);
-  let remaining = seconds;
-  restTimerEl = displayEl;
-
-  function tick() {
-    if (!restTimerEl) return;
-    if (remaining <= 0) {
-      clearInterval(restTimer);
-      restTimer = null;
-      restTimerEl.closest('.rest-timer-wrap')?.remove();
-      showToast('⏱️ Descanse concluído! Próximo exercício.', 'sucesso');
-      return;
-    }
-    const m = String(Math.floor(remaining / 60)).padStart(2, '0');
-    const s = String(remaining % 60).padStart(2, '0');
-    restTimerEl.textContent = `${m}:${s}`;
-    remaining--;
-  }
-  tick();
-  restTimer = setInterval(tick, 1000);
-}
 
 async function adminCreateSubscription(profId) {
   const p = PROFESSORES.find(x => x.id === profId);
@@ -4202,51 +3959,6 @@ async function resetStudentProgress(studentId) {
     if (s) s.progress = 0;
   } catch(e) {
     console.warn('resetStudentProgress:', e.message);
-  }
-}
-
-// ============================================================
-// OVERRIDE bootApp — adiciona loadStudentLoads para alunos
-// ============================================================
-const _origBootApp = typeof bootApp === 'function' ? bootApp : null;
-async function bootApp() {
-  document.getElementById('LS').style.display    = 'none';
-  document.getElementById('MA').style.display    = 'flex';
-  document.getElementById('NU').textContent       = CURRENT_PROFILE.name;
-
-  const nb = document.getElementById('NB');
-  if (CURRENT_PROFILE.role === 'admin') {
-    nb.textContent = 'Admin';
-    nb.className   = 'rb';
-    nb.style.background = '#6B6B69';
-    nb.style.color = 'white';
-  } else {
-    nb.textContent = isProfessor() ? 'Professor' : 'Aluno';
-    nb.className   = 'rb ' + (isProfessor() ? 'rp' : 'ral');
-  }
-
-  curUser = {
-    role:     CURRENT_PROFILE.role,
-    name:     CURRENT_PROFILE.name,
-    username: CURRENT_USER.email,
-    sid:      null,
-  };
-
-  buildSidebar();
-
-  if (CURRENT_PROFILE.role === 'admin') {
-    nav('admin-dashboard');
-  } else if (isProfessor()) {
-    await loadAllData();
-    nav('dashboard');
-  } else {
-    const notifWrap = document.getElementById('notifWrap');
-    if (notifWrap) notifWrap.style.display = 'flex';
-
-    await loadStudentData();
-    await Promise.all([loadNotifications(), loadStudentLoads()]);
-    showNotifBanner();
-    nav('meu-treino');
   }
 }
 
