@@ -486,13 +486,18 @@ async function dbGetMySubscription() {
 }
 
 async function dbGetProfessorStats(professorId) {
+  // Usa count via RPC para evitar problema de RLS
   const { data, error } = await supabaseClient
     .from('students')
-    .select('id, active')
+    .select('id, active', { count: 'exact' })
     .eq('professor_id', professorId);
-  if (error) return { total: 0, ativos: 0 };
-  const total  = data.length;
-  const ativos = data.filter(s => s.active !== false).length;
+  if (error) {
+    console.warn('dbGetProfessorStats error:', error.message);
+    return { total: 0, ativos: 0 };
+  }
+  const rows   = data ?? [];
+  const total  = rows.length;
+  const ativos = rows.filter(s => s.active !== false).length;
   return { total, ativos };
 }
 
@@ -518,4 +523,60 @@ async function dbCreateProfessorViaFunction(name, email, planType) {
   const json = await res.json();
   if (!res.ok) throw new Error(json.error ?? 'Erro ao criar professor');
   return json;
+}
+
+// ============================================================
+// STUDENT EXERCISE CONFIG (séries/reps personalizadas)
+// ============================================================
+
+async function dbGetStudentExerciseConfigs(studentId, planId) {
+  const { data, error } = await supabaseClient
+    .from('student_exercise_config')
+    .select('*')
+    .eq('student_id', studentId)
+    .eq('plan_id', planId);
+  if (error) throw error;
+  return data ?? [];
+}
+
+async function dbSaveStudentExerciseConfig(studentId, exerciseId, planId, customSeries, customReps) {
+  const { error } = await supabaseClient
+    .from('student_exercise_config')
+    .upsert({
+      student_id:    studentId,
+      exercise_id:   exerciseId,
+      plan_id:       planId,
+      custom_series: customSeries || null,
+      custom_reps:   customReps   || null,
+      updated_at:    new Date().toISOString(),
+    }, { onConflict: 'student_id,exercise_id,plan_id' });
+  if (error) throw error;
+}
+
+// ============================================================
+// STUDENT EXERCISE LOAD (kg por exercício)
+// ============================================================
+
+async function dbGetStudentLoads(studentId) {
+  const { data, error } = await supabaseClient
+    .from('student_exercise_load')
+    .select('*')
+    .eq('student_id', studentId);
+  if (error) throw error;
+  // Retorna mapa { exercise_id: load_kg }
+  const map = {};
+  (data ?? []).forEach(r => { map[r.exercise_id] = r.load_kg; });
+  return map;
+}
+
+async function dbSaveStudentLoad(studentId, exerciseId, loadKg) {
+  const { error } = await supabaseClient
+    .from('student_exercise_load')
+    .upsert({
+      student_id:  studentId,
+      exercise_id: exerciseId,
+      load_kg:     loadKg,
+      updated_at:  new Date().toISOString(),
+    }, { onConflict: 'student_id,exercise_id' });
+  if (error) throw error;
 }
