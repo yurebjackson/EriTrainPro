@@ -2185,9 +2185,7 @@ function rMeuTreino() {
       });
     }).catch(() => {});
   }
-  const mc = document.getElementById('MC');
-  const student = STUDENTS.find(s => s.id === curUser.sid);
-  const planId = student?.plan_id || student?.plan;
+  const mc   = document.getElementById('MC');
   const plan = planId ? getPlanById(planId) : (PLANS.length ? PLANS[0] : null);
 
   if (!plan) {
