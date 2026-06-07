@@ -416,13 +416,22 @@ async function bootApp() {
     nav('admin-dashboard');
   } else if (isProfessor()) {
     await loadAllData();
-    nav('dashboard');
+    // Se professor está bloqueado por falta de pagamento, redireciona para assinatura
+    if (typeof isProfBloqueado === 'function' && isProfBloqueado()) {
+      nav('minha-assinatura');
+      setTimeout(() => { if (typeof showPaymentGate === 'function') showPaymentGate(); }, 150);
+    } else {
+      nav('dashboard');
+    }
   } else {
     const notifWrap = document.getElementById('notifWrap');
     if (notifWrap) notifWrap.style.display = 'flex';
 
     await loadStudentData();
-    await loadNotifications();
+    await Promise.all([
+      loadNotifications(),
+      typeof loadStudentLoads === 'function' ? loadStudentLoads() : Promise.resolve(),
+    ]);
     showNotifBanner();
     nav('meu-treino');
   }
