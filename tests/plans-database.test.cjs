@@ -1,9 +1,9 @@
-// Preparação: npm.cmd install --prefix .validation --ignore-scripts @electric-sql/pglite
+// Preparação: npm ci --ignore-scripts
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { PGlite } = require('../.validation/node_modules/@electric-sql/pglite');
+const { PGlite } = require('@electric-sql/pglite');
 const id = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 
 test('transação dos planos e isolamento por professor/aluno em PostgreSQL', async () => {

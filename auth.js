@@ -117,25 +117,32 @@ function traduzirErroSupabase(err) {
 // Cadastro de novo usuário (professor ou aluno)
 // ============================================================
 async function doRegister() {
+  if (document.getElementById('btnRegister').disabled) return;
   const name     = document.getElementById('regName').value.trim();
   const email    = document.getElementById('regEmail').value.trim();
   const password = document.getElementById('regPass').value;
-  const role     = curRole;
+  const role     = 'professor';
 
   if (!name || !email || !password) {
     showToast('Preencha todos os campos', 'aviso');
     return;
   }
-  if (password.length < 6) {
-    showToast('A senha deve ter ao menos 6 caracteres', 'aviso');
+  if (password.length < 8) {
+    showToast('A senha deve ter ao menos 8 caracteres', 'aviso');
     return;
   }
 
   setBtnLoading('btnRegister', true);
 
   try {
+    if (!document.getElementById('regEmail').checkValidity()) throw new Error('Informe um e-mail válido.');
     await signUp(email, password, name, role);
-    showToast('Conta criada com sucesso! Faça login.', 'sucesso');
+    await signOut();
+    document.getElementById('lEmail').value = email;
+    document.getElementById('regPass').value = '';
+    document.getElementById('registrationStatus').textContent = 'Solicitação recebida. Confira sua caixa de entrada e o spam para confirmar o cadastro. Depois, aguarde a aprovação do administrador. Se já possui conta, tente entrar.';
+    showToast('Confira seu e-mail e aguarde a aprovação.', 'sucesso');
+    setBtnLoading('btnRegister', false);
     toggleRegisterForm(false);
   } catch (err) {
     const resultado = traduzirErroSupabase(err);
@@ -145,6 +152,31 @@ async function doRegister() {
     } else {
       showToast(resultado.texto, 'erro');
       setBtnLoading('btnRegister', false);
+    }
+  }
+}
+
+async function doResendConfirmation() {
+  const button = document.getElementById('btnResendConfirmation');
+  if (button.disabled) return;
+  const input = document.getElementById('lEmail');
+  const email = input.value.trim();
+  if (!email || !input.checkValidity()) {
+    showToast('Informe um e-mail válido no campo de login.', 'aviso');
+    return;
+  }
+  setBtnLoading('btnResendConfirmation', true);
+  try {
+    await resendConfirmationEmail(email);
+    document.getElementById('registrationStatus').textContent = 'Se houver um cadastro aguardando confirmação para este e-mail, você receberá um novo link. Confira também o spam. A aprovação do administrador continua necessária.';
+    iniciarCountdown('btnResendConfirmation', 60);
+  } catch (err) {
+    const resultado = traduzirErroSupabase(err);
+    if (resultado.tipo === 'rate_limit') {
+      iniciarCountdown('btnResendConfirmation', resultado.segundos);
+    } else {
+      showToast(resultado.texto, 'erro');
+      setBtnLoading('btnResendConfirmation', false);
     }
   }
 }
@@ -389,6 +421,13 @@ function setBtnLoading(id, loading) {
 // Iniciar app após login
 // ============================================================
 async function bootApp() {
+  if (!CURRENT_PROFILE || CURRENT_PROFILE.active === false || CURRENT_PROFILE.approval_status !== 'approved') {
+    const message = CURRENT_PROFILE?.approval_status === 'pending' ? 'Aguardando aprovação do administrador.' :
+      CURRENT_PROFILE?.approval_status === 'rejected' ? 'Sua solicitação não foi aprovada. Entre em contato com o administrador.' : 'Acesso indisponível. Entre em contato com o administrador.';
+    showLoginScreen();
+    document.getElementById('registrationStatus').textContent = message;
+    return;
+  }
   document.getElementById('LS').style.display    = 'none';
   document.getElementById('MA').style.display    = 'flex';
   document.getElementById('NU').textContent       = CURRENT_PROFILE.name;

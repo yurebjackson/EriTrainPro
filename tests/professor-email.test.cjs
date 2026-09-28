@@ -88,7 +88,7 @@ test('e-mail: repetir o endereço atual sincroniza sem trocar o Auth', async () 
 });
 
 test('trigger sincroniza Auth/perfil e desfaz Auth quando o perfil falha', async () => {
-  const { PGlite } = require('../.validation/node_modules/@electric-sql/pglite');
+  const { PGlite } = require('@electric-sql/pglite');
   const db = new PGlite();
   try {
     await db.exec(`create role anon; create role authenticated; create schema auth;

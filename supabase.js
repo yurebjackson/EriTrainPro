@@ -7,16 +7,28 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // AUTH
 // ============================================================
  
+const AUTH_REDIRECT_URL = 'https://eritrainpro.com.br/';
+
 async function signUp(email, password, name, role) {
   const { data, error } = await supabaseClient.auth.signUp({
     email,
     password,
     options: {
-      data: { name, role }
+      data: { name, role: 'professor' },
+      emailRedirectTo: AUTH_REDIRECT_URL
     }
   });
   if (error) throw error;
   return data;
+}
+
+async function resendConfirmationEmail(email) {
+  const { error } = await supabaseClient.auth.resend({
+    type: 'signup',
+    email,
+    options: { emailRedirectTo: AUTH_REDIRECT_URL }
+  });
+  if (error) throw error;
 }
  
 async function signIn(email, password) {
@@ -44,21 +56,8 @@ async function getProfile(userId) {
  
   if (error) throw error;
  
-  if (!data) {
-    const user = await getCurrentUser();
-    const name = user?.user_metadata?.name || user?.email?.split('@')[0] || 'Usuário';
-    const role = user?.user_metadata?.role || 'aluno';
- 
-    const { data: created, error: insertErr } = await supabaseClient
-      .from('profiles')
-      .insert([{ id: userId, name, role }])
-      .select()
-      .maybeSingle();
- 
-    if (insertErr) throw insertErr;
-    return created;
-  }
- 
+  if (!data) throw new Error('Perfil indisponível. Entre em contato com o administrador.');
+
   return data;
 }
  
