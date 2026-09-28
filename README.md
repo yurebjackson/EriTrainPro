@@ -44,6 +44,8 @@ EriTrainPro/
 
 ### Validação e organização
 
+A oferta é uma assinatura mensal EriTrain Pro, atualmente exibida por R$ 30,00/mês. Não há seleção de categorias na interface. O campo legado `profiles.plan_type` e os parâmetros opcionais do backend são mantidos para compatibilidade com instalações existentes; o frontend não usa esse campo para diferenciar recursos. Esta mudança não altera contratos ou valores já registrados no Mercado Pago.
+
 Execute `npm ci --ignore-scripts` e `npm test` para validar os fluxos com dados fictícios. As dependências servem aos testes; o frontend continua estático, sem etapa de compilação.
 
 `backend/` contém migrações e Edge Functions necessárias ao sistema; `tests/` contém os testes de regressão. Dependências, segredos e backups locais ficam fora do Git pelo `.gitignore`.

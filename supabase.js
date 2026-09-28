@@ -507,7 +507,7 @@ async function dbToggleProfessorActive(profileId, active) {
   if (error) throw error;
 }
 
-async function dbCreateProfessorViaFunction(name, email, planType) {
+async function dbCreateProfessorViaFunction(name, email) {
   const { data: { session } } = await supabaseClient.auth.getSession();
   const res = await fetch(`${SUPABASE_URL}/functions/v1/create-professor`, {
     method: 'POST',
@@ -515,7 +515,7 @@ async function dbCreateProfessorViaFunction(name, email, planType) {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${session.access_token}`,
     },
-    body: JSON.stringify({ name, email, plan_type: planType }),
+    body: JSON.stringify({ name, email }),
   });
   const json = await res.json();
   if (!res.ok) throw new Error(json.error ?? 'Erro ao criar professor');

@@ -421,12 +421,8 @@ body{transition:background .2s,color .2s}
         <button class="bas" id="btnReloadProfEmail" onclick="adminLoadProfEmail()">Consultar novamente</button>
       </div>
       <div class="fg">
-        <label class="fl">Plano</label>
-        <select class="fsel" id="epEditPlan">
-          <option value="basic">Basic — até 10 alunos</option>
-          <option value="pro">Pro — até 30 alunos</option>
-          <option value="unlimited">Unlimited — ilimitado</option>
-        </select>
+        <label class="fl">Assinatura</label>
+        <p class="auth-help">Assinatura mensal EriTrain Pro — R$ 30,00/mês.</p>
       </div>
       <div style="display:flex;gap:8px;justify-content:flex-end">
         <button class="bcn" onclick="closeM('moEditProf')">Cancelar</button>
@@ -2853,7 +2849,7 @@ function escapeAccountText(value) {
 function registrationRow(p) {
   const escape = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
   return `<div class="cd"><strong>${escape(p.name)}</strong><p>${escape(p.email)} — Aguardando aprovação</p>
-    <select class="fsel" id="reviewPlan-${p.id}"><option value="basic">Basic</option><option value="pro">Pro</option><option value="unlimited">Unlimited</option></select>
+    <p>Assinatura mensal EriTrain Pro — R$ 30,00/mês.</p>
     <button class="bas" onclick="reviewProfessor('${p.id}','approved',this)">Aprovar</button>
     <button class="bas" onclick="reviewProfessor('${p.id}','rejected',this)">Recusar</button></div>`;
 }
@@ -2861,7 +2857,7 @@ async function reviewProfessor(id, decision, button) {
   if (!confirm(decision === 'approved' ? 'Aprovar o acesso deste professor?' : 'Recusar esta solicitação?')) return;
   button.disabled = true;
   try {
-    const { error } = await supabaseClient.rpc('review_professor', { p_id:id, p_decision:decision, p_plan:document.getElementById('reviewPlan-'+id).value });
+    const { error } = await supabaseClient.rpc('review_professor', { p_id:id, p_decision:decision });
     if (error) throw error;
     await rAdminProfessores();
   } catch (err) { showToast(err.message, 'erro'); }
@@ -2892,7 +2888,7 @@ function _profRow(p, showActions = false) {
   if (p.approval_status === 'pending') return registrationRow(p);
   if (p.approval_status === 'rejected') return '<p>Solicitação recusada — acesso não liberado.</p>';
   const ativo     = p.active !== false;
-  const planLabel = { basic:'Basic', pro:'Pro', unlimited:'Unlimited' }[p.plan_type] ?? p.plan_type ?? '—';
+  const planLabel = 'Assinatura mensal EriTrain Pro';
   const cadastro  = p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : '—';
 
   return `<div style="display:flex;align-items:center;gap:12px;padding:14px 0;
@@ -2934,7 +2930,7 @@ async function adminCreateProfessor() {
 
   setBtnLoading('btnCreateProf', true);
   try {
-    const result = await dbCreateProfessorViaFunction(name, email, 'pro');
+    const result = await dbCreateProfessorViaFunction(name, email);
 
     // Mostra tela de resultado com credenciais
     document.getElementById('npForm').style.display   = 'none';
@@ -2978,7 +2974,7 @@ function adminOpenDetails(profId) {
   if (!p) return;
 
   const ativo     = p.active !== false;
-  const planLabel = { basic:'Basic', pro:'Pro', unlimited:'Unlimited' }[p.plan_type] ?? '—';
+  const planLabel = 'Assinatura mensal EriTrain Pro';
   const cadastro  = p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' }) : '—';
 
   document.getElementById('profDetailsBody').innerHTML = `
@@ -3024,7 +3020,6 @@ function adminOpenEditProf(profId) {
   if (!p) return;
   document.getElementById('epId').value           = profId;
   document.getElementById('epEditName').value     = p.name;
-  document.getElementById('epEditPlan').value     = p.plan_type ?? 'basic';
   openM('moEditProf');
   adminLoadProfEmail();
 }
@@ -3101,16 +3096,15 @@ async function adminChangeProfEmail() {
 async function adminSaveEditProf() {
   const profId = document.getElementById('epId').value;
   const name   = document.getElementById('epEditName').value.trim();
-  const plan   = document.getElementById('epEditPlan').value;
 
   if (!name) { showToast('Informe o nome', 'aviso'); return; }
 
   setBtnLoading('btnSaveEditProf', true);
   try {
-    const { error } = await supabaseClient.from('profiles').update({ name, plan_type: plan }).eq('id', profId).select('id').single();
+    const { error } = await supabaseClient.from('profiles').update({ name }).eq('id', profId).select('id').single();
     if (error) throw error;
     const p = PROFESSORES.find(x => x.id === profId);
-    if (p) { p.name = name; p.plan_type = plan; }
+    if (p) { p.name = name; }
     closeM('moEditProf');
     showToast('Professor atualizado!', 'sucesso');
     rAdminProfessores();
@@ -3240,7 +3234,7 @@ async function adminCreateSubscription(profId) {
 async function rMinhaAssinatura() {
   document.getElementById('MC').innerHTML = `
     <p class="pt">Minha Assinatura</p>
-    <p class="ps">Gerencie seu plano EriTrain Pro.</p>
+    <p class="ps">Uma assinatura mensal para acessar os recursos do EriTrain Pro.</p>
     <div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:3rem;color:var(--color-text-tertiary)">
       <i class="ti ti-loader" style="font-size:24px"></i> Carregando...
     </div>`;
@@ -3268,7 +3262,7 @@ async function rMinhaAssinatura() {
 
     document.getElementById('MC').innerHTML = `
       <p class="pt">Minha Assinatura</p>
-      <p class="ps">Gerencie seu plano EriTrain Pro.</p>
+      <p class="ps">Uma assinatura mensal para acessar os recursos do EriTrain Pro.</p>
       <div class="cd" style="margin-bottom:1rem">
         <div style="display:flex;align-items:center;gap:16px;margin-bottom:1.5rem">
           <div style="width:52px;height:52px;background:var(--brand-l);border-radius:12px;display:flex;align-items:center;justify-content:center">
