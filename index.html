@@ -44,6 +44,17 @@ body{transition:background .2s,color .2s}
 /* ===== LOGIN ===== */
 .ls{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem;background:var(--color-background-secondary)}
 .lc{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:2.5rem;width:100%;max-width:420px;box-shadow:0 4px 24px rgba(0,0,0,.06)}
+.auth-actions{display:grid;gap:12px;margin-top:20px}
+.auth-secondary{display:block;width:100%;min-height:46px;padding:12px 16px;border:1px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--brand-d);font:600 14px var(--font-sans);cursor:pointer;text-align:center;line-height:1.4}
+.auth-secondary:hover{background:var(--brand-l);border-color:var(--brand)}
+.auth-secondary:disabled{opacity:.6;cursor:not-allowed}
+.auth-secondary:focus-visible{outline:2px solid var(--brand);outline-offset:3px}
+.auth-help{font-size:13px;line-height:1.6;color:var(--color-text-secondary);margin:8px 0 20px}
+.auth-title{font-size:20px;margin:0 0 8px;color:var(--color-text-primary)}
+.auth-status:not(:empty){padding:14px 16px;margin:20px 0;border:1px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-secondary);font-size:14px;line-height:1.6;overflow-wrap:anywhere}
+.auth-steps{padding:16px 16px 16px 36px;margin:16px 0;background:var(--color-background-secondary);border-radius:var(--border-radius-md);font-size:14px;line-height:1.6}
+.auth-steps li+li{margin-top:10px}
+@media(max-width:480px){.ls{padding:20px 16px}.lc{padding:28px 22px}}
 .ll{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem}
 .li{width:40px;height:40px;background:var(--brand);border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-size:20px}
 .ll span{font-size:22px;font-weight:600;color:var(--color-text-primary)}
@@ -357,17 +368,34 @@ body{transition:background .2s,color .2s}
         <input class="fi" id="lPass" type="password" placeholder="••••••" onkeydown="if(event.key==='Enter')doLogin()"/>
       </div>
       <button class="bp" id="btnLogin" data-label="Entrar" onclick="doLogin()">Entrar</button>
-      <button class="bas" onclick="toggleRegisterForm(true)">Quero ser professor</button>
-      <button class="bas" id="btnResendConfirmation" data-label="Reenviar confirmação de e-mail" onclick="doResendConfirmation()">Reenviar confirmação de e-mail</button>
+      <div class="auth-actions">
+        <button class="auth-secondary" onclick="toggleRegisterForm(true)">Quero ser professor</button>
+        <button class="auth-secondary" id="btnResendConfirmation" data-label="Reenviar confirmação de e-mail" onclick="doResendConfirmation()">Reenviar confirmação de e-mail</button>
+      </div>
     </div>
-    <p id="registrationStatus" role="status" style="font-size:13px"></p>
+    <p id="registrationStatus" class="auth-status" role="status" aria-live="polite"></p>
     <div id="registerForm" style="display:none">
-      <p>Solicite seu acesso como professor. Confirme seu e-mail e aguarde a aprovação do administrador.</p>
-      <label class="fl" for="regName">Nome</label><input class="fi" id="regName" autocomplete="name" maxlength="120"/>
-      <label class="fl" for="regEmail">E-mail</label><input class="fi" id="regEmail" type="email" autocomplete="email" required/>
-      <label class="fl" for="regPass">Senha</label><input class="fi" id="regPass" type="password" autocomplete="new-password" minlength="8"/>
-      <button class="bp" id="btnRegister" data-label="Solicitar acesso" onclick="doRegister()">Solicitar acesso</button>
-      <button class="bas" onclick="toggleRegisterForm(false)">Voltar ao login</button>
+      <h1 class="auth-title">Crie sua conta de professor</h1>
+      <p class="auth-help">São duas etapas para liberar seu acesso: confirmar seu e-mail e receber a aprovação do administrador.</p>
+      <div class="fg"><label class="fl" for="regName">Nome completo</label><input class="fi" id="regName" autocomplete="name" maxlength="120" placeholder="Como você se chama?" required/></div>
+      <div class="fg"><label class="fl" for="regEmail">E-mail</label><input class="fi" id="regEmail" type="email" autocomplete="email" placeholder="seu@email.com" required/></div>
+      <div class="fg"><label class="fl" for="regPass">Crie sua senha de acesso</label><input class="fi" id="regPass" type="password" autocomplete="new-password" minlength="8" aria-describedby="regPassHelp" required/><p id="regPassHelp" class="auth-help">Use pelo menos 8 caracteres. Você usará esta senha para entrar após a aprovação.</p></div>
+      <div class="auth-actions">
+        <button class="bp" id="btnRegister" data-label="Criar conta e confirmar e-mail" onclick="doRegister()">Criar conta e confirmar e-mail</button>
+        <button class="auth-secondary" onclick="toggleRegisterForm(false)">Já tenho conta — voltar ao login</button>
+      </div>
+    </div>
+    <div id="pendingAccess" style="display:none">
+      <h1 class="auth-title">Acompanhe seu cadastro</h1>
+      <ol class="auth-steps">
+        <li id="registrationEmailState"></li>
+        <li>Aprovação do administrador: aguardando análise.</li>
+      </ol>
+      <p class="auth-help">Depois da aprovação, use o botão abaixo para acessar seu painel. Você não precisa criar outra conta.</p>
+      <div class="auth-actions">
+        <button class="bp" id="btnCheckApproval" data-label="Verificar aprovação" onclick="checkRegistrationApproval()">Verificar aprovação</button>
+        <button class="auth-secondary" onclick="doLogout()">Voltar ao login</button>
+      </div>
     </div>
   </div>
 </div>

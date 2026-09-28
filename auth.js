@@ -9,9 +9,17 @@ let CURRENT_PROFILE = null;   // linha da tabela profiles
 // Inicialização — chame no DOMContentLoaded
 // ============================================================
 async function initAuth() {
+  const callbackParams = new URLSearchParams(window.location.hash.slice(1));
+  const callbackFailed = (typeof AUTH_CALLBACK_FAILED !== 'undefined' && AUTH_CALLBACK_FAILED) || callbackParams.has('error') || callbackParams.has('error_code');
   // Usa getSession() — lê do localStorage sem chamada de rede,
   // evita deslogar ao dar F5 enquanto o token ainda é válido
-  const { data: { session } } = await supabaseClient.auth.getSession();
+  const { data: { session }, error } = await supabaseClient.auth.getSession();
+
+  if (callbackFailed || error) {
+    showLoginScreen();
+    document.getElementById('registrationStatus').textContent = 'Não foi possível validar este link. Ele pode ter expirado ou já ter sido usado. Tente entrar com seu e-mail e senha; se o e-mail ainda não estiver confirmado, solicite um novo link no botão abaixo.';
+    return;
+  }
 
   if (!session?.user) {
     showLoginScreen();
@@ -32,6 +40,7 @@ async function initAuth() {
 // Login com e-mail + senha — detecção automática de role
 // ============================================================
 async function doLogin() {
+  if (document.getElementById('btnLogin').disabled) return;
   const email    = document.getElementById('lEmail').value.trim();
   const password = document.getElementById('lPass').value;
 
@@ -64,6 +73,7 @@ async function doLogin() {
     }
 
     await bootApp();
+    setBtnLoading('btnLogin', false);
   } catch (err) {
     const resultado = traduzirErroSupabase(err);
     if (resultado.tipo === 'rate_limit') {
@@ -403,9 +413,15 @@ function showLoginScreen() {
   document.getElementById('LS').style.display = 'flex';
   document.getElementById('lEmail').value = '';
   document.getElementById('lPass').value  = '';
+  document.getElementById('pendingAccess').style.display = 'none';
+  document.getElementById('registrationStatus').textContent = '';
+  toggleRegisterForm(false);
+  setBtnLoading('btnLogin', false);
 }
 
 function toggleRegisterForm(show) {
+  document.getElementById('pendingAccess').style.display = 'none';
+  if (show) document.getElementById('registrationStatus').textContent = '';
   document.getElementById('loginForm').style.display    = show ? 'none' : 'block';
   document.getElementById('registerForm').style.display = show ? 'block' : 'none';
 }
@@ -426,6 +442,13 @@ async function bootApp() {
       CURRENT_PROFILE?.approval_status === 'rejected' ? 'Sua solicitação não foi aprovada. Entre em contato com o administrador.' : 'Acesso indisponível. Entre em contato com o administrador.';
     showLoginScreen();
     document.getElementById('registrationStatus').textContent = message;
+    if (CURRENT_PROFILE?.approval_status === 'pending' && CURRENT_PROFILE.active !== false) {
+      const confirmed = Boolean(CURRENT_USER?.email_confirmed_at);
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('pendingAccess').style.display = 'block';
+      document.getElementById('registrationEmailState').textContent = confirmed ? 'E-mail confirmado com sucesso.' : 'Confirmação do e-mail ainda não verificada. Abra o link recebido na sua caixa de entrada.';
+      document.getElementById('registrationStatus').textContent = confirmed ? 'E-mail confirmado com sucesso! Aguardando aprovação do administrador para liberar seu painel.' : 'Aguardando confirmação do e-mail e aprovação do administrador.';
+    }
     return;
   }
   document.getElementById('LS').style.display    = 'none';
@@ -474,6 +497,26 @@ async function bootApp() {
     ]);
     showNotifBanner();
     nav('meu-treino');
+  }
+}
+
+async function checkRegistrationApproval() {
+  if (document.getElementById('btnCheckApproval').disabled) return;
+  setBtnLoading('btnCheckApproval', true);
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      showLoginScreen();
+      document.getElementById('registrationStatus').textContent = 'Entre novamente para consultar seu cadastro.';
+      return;
+    }
+    CURRENT_USER = user;
+    CURRENT_PROFILE = await getProfile(user.id);
+    await bootApp();
+  } catch (err) {
+    document.getElementById('registrationStatus').textContent = 'Não foi possível consultar a aprovação agora. Tente novamente.';
+  } finally {
+    setBtnLoading('btnCheckApproval', false);
   }
 }
 

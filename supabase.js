@@ -1,6 +1,9 @@
 const SUPABASE_URL = 'https://rzivwbsqmsyhywfnmxbr.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_JG7SoGkEeLCvjU_ZbT89Uw_9gVjq856';
  
+// Preserva o erro antes de o SDK processar e limpar o retorno de autenticação.
+const AUTH_CALLBACK_FAILED = typeof window !== 'undefined' &&
+  /(?:^#|&)(?:error|error_code)=/.test(window.location.hash);
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
  
 // ============================================================
